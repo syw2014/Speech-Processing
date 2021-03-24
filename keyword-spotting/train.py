@@ -433,7 +433,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--summaries_dir',
         type=str,
-        default='/home/yw.shi/framework/data/speech_dataset/retrain_logs',
+        default='/home/yw.shi/projects/5.asr/data/speech_dataset/retrain_logs',
         help='Where to save summary logs for TensorBoard.')
     parser.add_argument(
         '--wanted_words',
@@ -443,7 +443,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_dir',
         type=str,
-        default='/home/yw.shi/framework/data/speech_dataset/speech_commands_train',
+        default='/home/yw.shi/projects/5.asr/data/speech_dataset/speech_commands_train',
         help='Directory to write event logs and checkpoint.')
     parser.add_argument(
         '--save_step_interval',
@@ -475,7 +475,6 @@ if __name__ == '__main__':
         type=str,
         default='mfcc',
         help='Spectrogram processing mode. Can be "mfcc", "average", or "micro"')
-
 
     # Function used to parse --verbosity argument
     def verbosity_arg(value):
