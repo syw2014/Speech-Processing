@@ -82,6 +82,12 @@ import input_data
 import models
 from tensorflow.python.platform import gfile
 
+# Init wandb
+import wandb
+from wandb.tensorflow import WandbHook
+wandb.init(project="keyword-spotting", entity="jerryshi", sync_tensorboard=True)
+
+
 FLAGS = None
 
 
@@ -433,7 +439,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--summaries_dir',
         type=str,
-        default='/home/yw.shi/projects/5.asr/data/speech_dataset/retrain_logs',
+        default='/home/yw.shi/projects/5.asr/data/speech_dataset/result/retrain_logs',
         help='Where to save summary logs for TensorBoard.')
     parser.add_argument(
         '--wanted_words',
@@ -443,7 +449,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_dir',
         type=str,
-        default='/home/yw.shi/projects/5.asr/data/speech_dataset/speech_commands_train',
+        default='/home/yw.shi/projects/5.asr/data/speech_dataset/result/speech_commands_train',
         help='Directory to write event logs and checkpoint.')
     parser.add_argument(
         '--save_step_interval',
