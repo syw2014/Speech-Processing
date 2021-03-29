@@ -26,6 +26,7 @@ import random
 import re
 import sys
 import tarfile
+import json
 
 import numpy as np
 from six.moves import urllib
@@ -66,6 +67,18 @@ def prepare_words_list(wanted_words):
       List with the standard silence and unknown tokens added.
     """
     return [SILENCE_LABEL, UNKNOWN_WORD_LABEL] + wanted_words
+
+
+def which_set2(filename):
+    result = ""
+    if filename.find("train") != -1:
+        result = "training"
+    elif filename.find("dev") != -1:
+        result = "validation"
+    elif filename.find("test") != -1:
+        result = "testing"
+    positive = True if filename.startswith("p") else False
+    return result, positive
 
 
 def which_set(filename, validation_percentage, testing_percentage):
@@ -196,7 +209,7 @@ class AudioProcessor(object):
                  model_settings, summaries_dir):
         if data_dir:
             self.data_dir = data_dir
-            self.maybe_download_and_extract_dataset(data_url, data_dir)
+            # self.maybe_download_and_extract_dataset(data_url, data_dir)
             self.prepare_data_index(silence_percentage, unknown_percentage,
                                     wanted_words, validation_percentage,
                                     testing_percentage)
@@ -274,35 +287,62 @@ class AudioProcessor(object):
         # Make sure the shuffling and picking of unknowns is deterministic.
         random.seed(RANDOM_SEED)
         wanted_words_index = {}
+        # 中文情况下，唤醒词只有<你好小问>和<出门问问>两个词，还有个未知
         for index, wanted_word in enumerate(wanted_words):
             wanted_words_index[wanted_word] = index + 2
+
         self.data_index = {'validation': [], 'testing': [], 'training': []}
         unknown_index = {'validation': [], 'testing': [], 'training': []}
         all_words = {}
-        # Look through all the subfolders to find audio samples
-        search_path = os.path.join(self.data_dir, '*', '*.wav')
-        for wav_path in gfile.Glob(search_path):
-            _, word = os.path.split(os.path.dirname(wav_path))
-            word = word.lower()
-            # Treat the '_background_noise_' folder as a special case, since we expect
-            # it to contain long audio samples we mix in to improve training.
-            if word == BACKGROUND_NOISE_DIR_NAME:
-                continue
-            all_words[word] = True
-            set_index = which_set(wav_path, validation_percentage, testing_percentage)
-            # If it's a known class, store its detail, otherwise add it to the list
-            # we'll use to train the unknown label.
-            if word in wanted_words_index:
-                self.data_index[set_index].append({'label': word, 'file': wav_path})
-            else:
-                unknown_index[set_index].append({'label': word, 'file': wav_path})
-        if not all_words:
-            raise Exception('No .wavs found at ' + search_path)
-        for index, wanted_word in enumerate(wanted_words):
-            if wanted_word not in all_words:
-                raise Exception('Expected to find ' + wanted_word +
-                                ' in labels but only found ' +
-                                ', '.join(all_words.keys()))
+
+        # 处理mobvoi_hot_dataset数据集
+        resource_files = os.path.join(self.data_dir, '*', '*.json')
+        for json_path in gfile.Glob(resource_files):
+            _, filename = os.path.split(os.path.dirname(json_path))
+            set_index, pos = which_set2(filename)
+
+            with open(json_path) as f:
+                jdata = json.load(f)
+                for x in jdata:
+                    if x['keyword_id'] == 0:
+                        word = "你好小问"
+                    else:
+                        word = "出门问问"
+                    wav_path = os.path.join(self.data_dir, "mobvoi_hotword_dataset/" + x["utt_id"] + ".wav")
+                    if pos:
+                        self.data_index[set_index].append({"label": word, 'file': wav_path})
+                    else:
+                        unknown_index[set_index].append({"label": UNKNOWN_WORD_LABEL, 'file': wav_path})
+
+
+
+
+
+        # # Look through all the subfolders to find audio samples
+        # search_path = os.path.join(self.data_dir, '*', '*.wav')
+        # for wav_path in gfile.Glob(search_path):
+        #     _, word = os.path.split(os.path.dirname(wav_path))
+        #     word = word.lower()
+        #     # Treat the '_background_noise_' folder as a special case, since we expect
+        #     # it to contain long audio samples we mix in to improve training.
+        #     if word == BACKGROUND_NOISE_DIR_NAME:
+        #         continue
+        #     all_words[word] = True
+        #     set_index = which_set(wav_path, validation_percentage, testing_percentage)
+        #     # If it's a known class, store its detail, otherwise add it to the list
+        #     # we'll use to train the unknown label.
+        #     if word in wanted_words_index:
+        #         self.data_index[set_index].append({'label': word, 'file': wav_path})
+        #     else:
+        #         unknown_index[set_index].append({'label': word, 'file': wav_path})
+        # if not all_words:
+        #     raise Exception('No .wavs found at ' + search_path)
+        # for index, wanted_word in enumerate(wanted_words):
+        #     if wanted_word not in all_words:
+        #         raise Exception('Expected to find ' + wanted_word +
+        #                         ' in labels but only found ' +
+        #                         ', '.join(all_words.keys()))
+
         # We need an arbitrary file to load as the input for the silence samples.
         # It's multiplied by zero later, so the content doesn't matter.
         silence_wav_path = self.data_index['training'][0]['file']
