@@ -444,7 +444,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--wanted_words',
         type=str,
-        default='你好小问,出门问问',
+        #default='你好小问,出门问问',
+        default='nihaoxiaowen,chumenwenwen',
         help='Words to use (others will be added to an unknown label)', )
     parser.add_argument(
         '--train_dir',
