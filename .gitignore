@@ -1,2 +1,3 @@
 .idea/
 keyword-spotting/__pycache__
+keyword-spotting/wandb/
