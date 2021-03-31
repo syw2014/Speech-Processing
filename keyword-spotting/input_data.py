@@ -70,6 +70,7 @@ def prepare_words_list(wanted_words):
 
 
 def which_set2(filename):
+    print(filename)
     result = ""
     if filename.find("train") != -1:
         result = "training"
@@ -296,23 +297,25 @@ class AudioProcessor(object):
         all_words = {}
 
         # 处理mobvoi_hot_dataset数据集
-        resource_files = os.path.join(self.data_dir, '*', '*.json')
+        resource_files = os.path.join(self.data_dir + '/mobvoi_hotword_dataset_resources', '*.json')
         for json_path in gfile.Glob(resource_files):
-            _, filename = os.path.split(os.path.dirname(json_path))
+            _, filename = os.path.split(json_path)
             set_index, pos = which_set2(filename)
 
             with open(json_path) as f:
                 jdata = json.load(f)
                 for x in jdata:
                     if x['keyword_id'] == 0:
-                        word = "你好小问"
+                        word = "nihaoxiaowen"
                     else:
-                        word = "出门问问"
-                    wav_path = os.path.join(self.data_dir, "mobvoi_hotword_dataset/" + x["utt_id"] + ".wav")
+                        word = "chumenwenwen"
+                    wav_path = os.path.join(self.data_dir, "temp/mobvoi_hotword_dataset/" + x["utt_id"] + ".wav")
                     if pos:
                         self.data_index[set_index].append({"label": word, 'file': wav_path})
+                        all_words[word] = True
                     else:
                         unknown_index[set_index].append({"label": UNKNOWN_WORD_LABEL, 'file': wav_path})
+                        all_words[UNKNOWN_WORD_LABEL] = True
 
 
 
@@ -646,6 +649,7 @@ class AudioProcessor(object):
                 [self.merged_summaries_, self.output_], feed_dict=input_dict)
             self.summary_writer_.add_summary(summary)
             data[i - offset, :] = data_tensor.flatten()
+            #print(sample['label'])
             label_index = self.word_to_index[sample['label']]
             labels[i - offset] = label_index
         return data, labels
