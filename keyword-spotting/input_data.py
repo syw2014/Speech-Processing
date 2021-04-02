@@ -208,6 +208,8 @@ class AudioProcessor(object):
     def __init__(self, data_url, data_dir, silence_percentage, unknown_percentage,
                  wanted_words, validation_percentage, testing_percentage,
                  model_settings, summaries_dir):
+        self.time_shift_padding_placeholder_ = tf.compat.v1.placeholder(
+            tf.int32, [2, 2], name='time_shift_padding')
         if data_dir:
             self.data_dir = data_dir
             # self.maybe_download_and_extract_dataset(data_url, data_dir)
@@ -449,8 +451,6 @@ class AudioProcessor(object):
             scaled_foreground = tf.multiply(wav_decoder.audio,
                                             self.foreground_volume_placeholder_)
             # Shift the sample's start position, and pad any gaps with zeros.
-            self.time_shift_padding_placeholder_ = tf.compat.v1.placeholder(
-                tf.int32, [2, 2], name='time_shift_padding')
             self.time_shift_offset_placeholder_ = tf.compat.v1.placeholder(
                 tf.int32, [2], name='time_shift_offset')
             padded_foreground = tf.pad(
@@ -475,8 +475,9 @@ class AudioProcessor(object):
                 window_size=model_settings['window_size_samples'],
                 stride=model_settings['window_stride_samples'],
                 magnitude_squared=True)
-            tf.compat.v1.summary.image(
-                'spectrogram', tf.expand_dims(spectrogram, -1), max_outputs=1)
+            # remove summary
+            # tf.compat.v1.summary.image(
+            #     'spectrogram', tf.expand_dims(spectrogram, -1), max_outputs=1)
             # The number of buckets in each FFT row in the spectrogram will depend on
             # how many input samples there are in each window. This can be quite
             # large, with a 160 sample window producing 127 buckets for example. We
@@ -492,16 +493,16 @@ class AudioProcessor(object):
                     strides=[1, model_settings['average_window_width']],
                     pooling_type='AVG',
                     padding='SAME')
-                tf.compat.v1.summary.image('shrunk_spectrogram',
-                                           self.output_,
-                                           max_outputs=1)
+                # tf.compat.v1.summary.image('shrunk_spectrogram',
+                #                            self.output_,
+                #                            max_outputs=1)
             elif model_settings['preprocess'] == 'mfcc':
                 self.output_ = audio_ops.mfcc(
                     spectrogram,
                     wav_decoder.sample_rate,
                     dct_coefficient_count=model_settings['fingerprint_width'])
-                tf.compat.v1.summary.image(
-                    'mfcc', tf.expand_dims(self.output_, -1), max_outputs=1)
+                # tf.compat.v1.summary.image(
+                #     'mfcc', tf.expand_dims(self.output_, -1), max_outputs=1)
             elif model_settings['preprocess'] == 'micro':
                 if not frontend_op:
                     raise Exception(
@@ -523,10 +524,10 @@ class AudioProcessor(object):
                     out_scale=1,
                     out_type=tf.float32)
                 self.output_ = tf.multiply(micro_frontend, (10.0 / 256.0))
-                tf.compat.v1.summary.image(
-                    'micro',
-                    tf.expand_dims(tf.expand_dims(self.output_, -1), 0),
-                    max_outputs=1)
+                # tf.compat.v1.summary.image(
+                #     'micro',
+                #     tf.expand_dims(tf.expand_dims(self.output_, -1), 0),
+                #     max_outputs=1)
             else:
                 raise ValueError('Unknown preprocess mode "%s" (should be "mfcc", '
                                  ' "average", or "micro")' %
@@ -534,10 +535,10 @@ class AudioProcessor(object):
 
             # Merge all the summaries and write them out to /tmp/retrain_logs (by
             # default)
-            self.merged_summaries_ = tf.compat.v1.summary.merge_all(scope='data')
-            if summaries_dir:
-                self.summary_writer_ = tf.compat.v1.summary.FileWriter(
-                    summaries_dir + '/data', tf.compat.v1.get_default_graph())
+            # self.merged_summaries_ = tf.compat.v1.summary.merge_all(scope='data')
+            # if summaries_dir:
+            #     self.summary_writer_ = tf.compat.v1.summary.FileWriter(
+            #         summaries_dir + '/data', tf.compat.v1.get_default_graph())
 
     def set_size(self, mode):
         """Calculates the number of samples in the dataset partition.
@@ -645,9 +646,12 @@ class AudioProcessor(object):
             else:
                 input_dict[self.foreground_volume_placeholder_] = 1
             # Run the graph to produce the output audio.
-            summary, data_tensor = sess.run(
-                [self.merged_summaries_, self.output_], feed_dict=input_dict)
-            self.summary_writer_.add_summary(summary)
+            # summary, data_tensor = sess.run(
+            #     [self.merged_summaries_, self.output_], feed_dict=input_dict)
+            # self.summary_writer_.add_summary(summary)
+            data_tensor = sess.run(
+                [self.output_], feed_dict=input_dict)
+
             data[i - offset, :] = data_tensor.flatten()
             #print(sample['label'])
             label_index = self.word_to_index[sample['label']]
