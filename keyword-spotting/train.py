@@ -206,6 +206,8 @@ def main(_):
                                                    sess.graph)
     validation_writer = tf.compat.v1.summary.FileWriter(
         FLAGS.summaries_dir + '/validation')
+    test_writer = tf.compat.v1.summary.FileWriter(
+        FLAGS.summaries_dir + "/test")
 
     tf.compat.v1.global_variables_initializer().run()
 
@@ -310,13 +312,14 @@ def main(_):
     for i in xrange(0, set_size, FLAGS.batch_size):
         test_fingerprints, test_ground_truth = audio_processor.get_data(
             FLAGS.batch_size, i, model_settings, 0.0, 0.0, 0, 'testing', sess)
-        test_accuracy, conf_matrix = sess.run(
-            [evaluation_step, confusion_matrix],
+        test_summary, test_accuracy, conf_matrix = sess.run(
+            [merged_summaries, evaluation_step, confusion_matrix],
             feed_dict={
                 fingerprint_input: test_fingerprints,
                 ground_truth_input: test_ground_truth,
                 dropout_rate: 0.0
             })
+        test_writer.add_summary(test_summary, i)
         batch_size = min(FLAGS.batch_size, set_size - i)
         total_accuracy += (test_accuracy * batch_size) / set_size
         if total_conf_matrix is None:
@@ -326,6 +329,7 @@ def main(_):
     tf.compat.v1.logging.warn('Confusion Matrix:\n %s' % (total_conf_matrix))
     tf.compat.v1.logging.warn('Final test accuracy = %.1f%% (N=%d)' %
                               (total_accuracy * 100, set_size))
+
 
 
 if __name__ == '__main__':
@@ -439,7 +443,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--summaries_dir',
         type=str,
-        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result/retrain_logs',
+        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/retrain_logs',
         help='Where to save summary logs for TensorBoard.')
     parser.add_argument(
         '--wanted_words',
@@ -450,7 +454,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_dir',
         type=str,
-        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result/speech_commands_train',
+        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/speech_commands_train',
         help='Directory to write event logs and checkpoint.')
     parser.add_argument(
         '--save_step_interval',
