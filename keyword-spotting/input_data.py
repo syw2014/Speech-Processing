@@ -683,7 +683,7 @@ class AudioProcessor(object):
             self.foreground_volume_placeholder_: 1,
         }
         # Run the graph to produce the output audio.
-        data_tensor = sess.run([self.output_], feed_dict=input_dict)
+        data_tensor = sess.run(self.output_, feed_dict=input_dict)
         return data_tensor
 
     def get_unprocessed_data(self, how_many, model_settings, mode):
