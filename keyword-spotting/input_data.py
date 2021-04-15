@@ -650,7 +650,7 @@ class AudioProcessor(object):
             #     [self.merged_summaries_, self.output_], feed_dict=input_dict)
             # self.summary_writer_.add_summary(summary)
             data_tensor = sess.run(
-                [self.output_], feed_dict=input_dict)
+                self.output_, feed_dict=input_dict)
 
             data[i - offset, :] = data_tensor.flatten()
             #print(sample['label'])
