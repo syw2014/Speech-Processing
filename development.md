@@ -138,3 +138,6 @@ prepare_processing_graph
 
 客户端运行在Windows环境下，利用PyAudio库完成语音获取。
 
+## 参考文献
+1.https://blog.csdn.net/Berylxuan/article/details/80826533
+
