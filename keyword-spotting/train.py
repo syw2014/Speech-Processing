@@ -211,6 +211,11 @@ def main(_):
 
     tf.compat.v1.global_variables_initializer().run()
 
+    # parameters count
+    params = tf.compat.v1.trainable_variables()
+    num_params = sum(map(lambda t: np.prod(tf.shape(t.value()).eval()), params))
+    print("Total number of Parameters: ", num_params)
+
     start_step = 1
 
     if FLAGS.start_checkpoint:
@@ -230,6 +235,7 @@ def main(_):
         f.write('\n'.join(audio_processor.words_list))
 
     # Training loop.
+    best_accuracy = 0
     training_steps_max = np.sum(training_steps_list)
     for training_step in xrange(start_step, training_steps_max + 1):
         # Figure out what the current learning rate is.
@@ -297,13 +303,23 @@ def main(_):
                                       (training_step, total_accuracy * 100, set_size))
 
         # Save the model checkpoint periodically.
-        if (training_step % FLAGS.save_step_interval == 0 or
-                training_step == training_steps_max):
-            checkpoint_path = os.path.join(FLAGS.train_dir,
-                                           FLAGS.model_architecture + '.ckpt')
+        # if (training_step % FLAGS.save_step_interval == 0 or
+        #         training_step == training_steps_max):
+        #     checkpoint_path = os.path.join(FLAGS.train_dir,
+        #                                    FLAGS.model_architecture + '.ckpt')
+        #     tf.compat.v1.logging.info('Saving to "%s-%d"', checkpoint_path,
+        #                               training_step)
+        #     saver.save(sess, checkpoint_path, global_step=training_step)
+
+        # Save the model with the best accuracy
+        if total_accuracy > best_accuracy:
+            best_accuracy = total_accuracy
+            checkpoint_path = os.path.join(FLAGS.train_dir, "best",
+                                           FLAGS.model_architecture + '_' + str(int(best_accuracy*10000)) + '.ckpt')
             tf.compat.v1.logging.info('Saving to "%s-%d"', checkpoint_path,
                                       training_step)
             saver.save(sess, checkpoint_path, global_step=training_step)
+        tf.compat.v1.logging.info('So far the best validation accuracy is %.2f%%' %(best_accuracy*100))
 
     set_size = audio_processor.set_size('testing')
     tf.compat.v1.logging.info('set_size=%d', set_size)
@@ -329,7 +345,6 @@ def main(_):
     tf.compat.v1.logging.warn('Confusion Matrix:\n %s' % (total_conf_matrix))
     tf.compat.v1.logging.warn('Final test accuracy = %.1f%% (N=%d)' %
                               (total_accuracy * 100, set_size))
-
 
 
 if __name__ == '__main__':
