@@ -40,7 +40,7 @@ def run_inference(wanted_words, sample_rate, clip_duration_ms,
     """
 
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
-    sess = tf.InteractiveSession()
+    sess = tf.compat.v1.InteractiveSession()
 
     # Define model setting config
     model_settings = models.prepare_model_settings(
