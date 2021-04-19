@@ -83,9 +83,10 @@ import models
 from tensorflow.python.platform import gfile
 
 # Init wandb
-# import wandb
+import wandb
 
-# wandb.init(project="keyword-spotting", entity="jerryshi", sync_tensorboard=True)
+wandb.init(project="keyword-spotting", entity="jerryshi", sync_tensorboard=True)
+wandb.run.name = "2-cnn-layers"
 
 
 FLAGS = None
