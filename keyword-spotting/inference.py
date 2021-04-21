@@ -73,10 +73,12 @@ def run_inference(wanted_words, sample_rate, clip_duration_ms,
         tf.int64, [None], name='groundtruth_input')
 
     predicted_indices = tf.argmax(input=logits, axis=1)
-    expected_indices = tf.argmax(input=ground_truth_input, axis=1)
+    expected_indices = ground_truth_input
+    #expected_indices = tf.argmax(input=ground_truth_input, axis=1)
     correct_prediction = tf.equal(predicted_indices, expected_indices)
-    confusion_matrix = tf.math.confusion_matrix(
-        expected_indices, predicted_indices, num_classes=label_count)
+    confusion_matrix = tf.math.confusion_matrix(labels=expected_indices, 
+            predictions=predicted_indices, 
+            num_classes=label_count)
     evaluation_step = tf.reduce_mean(input_tensor=tf.cast(correct_prediction, tf.float32))
     models.load_variables_from_checkpoint(sess, FLAGS.checkpoint)
 
@@ -85,7 +87,7 @@ def run_inference(wanted_words, sample_rate, clip_duration_ms,
     tf.compat.v1.logging.info('set_size=%d', set_size)
     total_accuracy = 0
     total_conf_matrix = None
-    for i in xrange(0, set_size, FLAGS.batch_size):
+    for i in range(0, set_size, FLAGS.batch_size):
         test_fingerprints, test_ground_truth = audio_processor.get_data(
             FLAGS.batch_size, i, model_settings, 0.0, 0.0, 0, 'training', sess)
         train_accuracy, conf_matrix = sess.run(
@@ -109,7 +111,7 @@ def run_inference(wanted_words, sample_rate, clip_duration_ms,
     tf.compat.v1.logging.info('set_size=%d', set_size)
     total_accuracy = 0
     total_conf_matrix = None
-    for i in xrange(0, set_size, FLAGS.batch_size):
+    for i in range(0, set_size, FLAGS.batch_size):
         validation_fingerprints, validation_ground_truth = audio_processor.get_data(
             FLAGS.batch_size, i, model_settings, 0.0, 0.0, 0, 'validation', sess)
         validation_accuracy, conf_matrix = sess.run(
@@ -133,7 +135,7 @@ def run_inference(wanted_words, sample_rate, clip_duration_ms,
     tf.compat.v1.logging.info('set_size=%d', set_size)
     total_accuracy = 0
     total_conf_matrix = None
-    for i in xrange(0, set_size, FLAGS.batch_size):
+    for i in range(0, set_size, FLAGS.batch_size):
         test_fingerprints, test_ground_truth = audio_processor.get_data(
             FLAGS.batch_size, i, model_settings, 0.0, 0.0, 0, 'testing', sess)
         test_accuracy, conf_matrix = sess.run(
@@ -285,6 +287,11 @@ if __name__ == '__main__':
         type=str,
         default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/speech_commands_train',
         help='Directory to write event logs and checkpoint.')
+    parser.add_argument(
+            '--checkpoint',
+            type=str,
+            default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/speech_commands_train/conv.ckpt-18000',
+            help='checkpint to load the weights from.')
     parser.add_argument(
         '--save_step_interval',
         type=int,
