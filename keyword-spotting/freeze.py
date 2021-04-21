@@ -316,6 +316,11 @@ if __name__ == '__main__':
         default=1000,
         help='Expected duration in milliseconds of the wavs', )
     parser.add_argument(
+            '--clip_stride_ms',
+            type=int,
+            default=30,
+            help='How often to run recognition, Useful for models with cache.')
+    parser.add_argument(
         '--window_size_ms',
         type=float,
         default=30.0,
@@ -381,7 +386,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--start_checkpoint',
         type=str,
-        default='',
+        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/speech_commands_train/conv.ckpt-18000',
         help='If specified, restore this pretrained model before any training.')
     parser.add_argument(
         '--model_architecture',
@@ -403,4 +408,14 @@ if __name__ == '__main__':
         type=str,
         default='mfcc',
         help='Spectrogram processing mode. Can be "mfcc", "average", or "micro"')
+    parser.add_argument(
+            '--save_format',
+            type=str,
+            default='graph_def',
+            help='which format to save.')
+    parser.add_argument(
+            '--output_file',
+            type=str,
+            default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/frozen_graph.pb')
+    FLAGS, unparsed = parser.parse_known_args() 
     tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)
