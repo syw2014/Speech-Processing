@@ -33,11 +33,14 @@ from __future__ import print_function
 
 import argparse
 import sys
-
+import os
 import tensorflow as tf
 
 FLAGS = None
-
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+gpus = tf.config.list_physical_devices('GPU')
+print(gpus)
+tf.config.experimental.set_memory_growth(gpus[0], True)
 
 def load_graph(filename):
     """Unpersists graph from file as default graph."""
@@ -103,11 +106,20 @@ def main(_):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--wav', type=str, default='', help='Audio file to be identified.')
+        '--wav', 
+        type=str, 
+        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/f147c012fd8782df86a0a5a6b3e336bb.wav', 
+        help='Audio file to be identified.')
     parser.add_argument(
-        '--graph', type=str, default='', help='Model to use for identification.')
+        '--graph', 
+        type=str, 
+        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/frozen_graph.pb', 
+        help='Model to use for identification.')
     parser.add_argument(
-        '--labels', type=str, default='', help='Path to file containing labels.')
+        '--labels', 
+        type=str, 
+        default='/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/conv_labels.txt', 
+        help='Path to file containing labels.')
     parser.add_argument(
         '--input_name',
         type=str,
