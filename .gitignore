@@ -2,3 +2,6 @@
 keyword-spotting/__pycache__
 keyword-spotting/wandb/
 data/
+keyword-spotting/build/
+keyword-spotting/main
+keyword-spotting/.ipynb_checkpoints/
