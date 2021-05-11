@@ -23,6 +23,7 @@ limitations under the License.
 #include "tensorflow/core/platform/types.h"
 #include "tensorflow/core/public/session.h"
 #include "tensorflow/core/util/command_line_flags.h"
+#include "tensorflow/core/platform/status.h"
 
 // These are all common classes it's handy to reference with no namespace.
 using tensorflow::Flag;
@@ -35,7 +36,7 @@ using tensorflow::tstring;
 namespace {
 
 // Reads a model graph definition from disk, and creates a session object you
-// can use to run it.
+// can use to run it. Protobuf model file
 Status LoadGraph(const string& graph_file_name,
                  std::unique_ptr<tensorflow::Session>* session) {
   tensorflow::GraphDef graph_def;
@@ -88,7 +89,7 @@ void GetTopLabels(const std::vector<Tensor>& outputs, int how_many_labels,
   scores.resize(how_many_labels);
   Tensor sorted_indices(tensorflow::DT_INT32, {how_many_labels});
   Tensor sorted_scores(tensorflow::DT_FLOAT, {how_many_labels});
-  for (int i = 0; i < scores.size(); ++i) {
+  for (std::size_t i = 0; i < scores.size(); ++i) {
     sorted_indices.flat<int>()(i) = scores[i].first;
     sorted_scores.flat<float>()(i) = scores[i].second;
   }
@@ -99,9 +100,9 @@ void GetTopLabels(const std::vector<Tensor>& outputs, int how_many_labels,
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  string wav = "";
-  string graph = "";
-  string labels = "";
+  string wav = "/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/f147c012fd8782df86a0a5a6b3e336bb.wav";
+  string graph = "/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/frozen_graph.pb";
+  string labels = "/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset/result2/conv_labels.txt";
   string input_name = "wav_data";
   string output_name = "labels_softmax";
   int32 how_many_labels = 3;
