@@ -21,25 +21,25 @@ SET(CMAKE_THIRDPARTY_PATH "/home/yw.shi/env/tf241")
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
 SET(CMAKE_INSTALL_RPATH
 
-    "/home/yw.shi/env/tf241/lib/"
+    "${CMAKE_THIRDPARTY_PATH}/lib/"
    )
 
 # 设置构建目标
 set(Main  "${CMAKE_SOURCE_DIR}/label_wav.cc")
 
 # 设置头文件路径，所有依赖头文件都需添加进来
-include_directories("/home/yw.shi/env/tf241/eigen3")
-include_directories("/home/yw.shi/env/tf241")
-include_directories("/home/yw.shi/env/tf241/compile")
-include_directories("/home/yw.shi/env/tf241/third_party/abseil-cpp/include/")
-include_directories("/home/yw.shi/env/tf241/protobuf/v3.9.2/include/")
+include_directories("${CMAKE_THIRDPARTY_PATH}/eigen3")
+include_directories("${CMAKE_THIRDPARTY_PATH}")
+include_directories("${CMAKE_THIRDPARTY_PATH}/compile")
+include_directories("${CMAKE_THIRDPARTY_PATH}/third_party/abseil-cpp/include/")
+include_directories("${CMAKE_THIRDPARTY_PATH}/protobuf/v3.9.2/include/")
 
 
 
 # 设置动态库和静态库的路径，这里包括libtensorflow，absl静态库，protobuf动态库
-link_directories("/home/yw.shi/env/tf241/lib")
-link_directories("/home/yw.shi/env/tf241/third_party/abseil-cpp/lib")
-link_directories("/home/yw.shi/env/tf241/protobuf/v3.9.2/lib/")
+link_directories("${CMAKE_THIRDPARTY_PATH}/lib")
+link_directories("${CMAKE_THIRDPARTY_PATH}/third_party/abseil-cpp/lib")
+link_directories("${CMAKE_THIRDPARTY_PATH}/protobuf/v3.9.2/lib/")
 
 
 # 设置运行路径
