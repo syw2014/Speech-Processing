@@ -7,10 +7,7 @@
 # Software: PyCharm
 """To process audio data for keyword spotting with tf2.3.x"""
 
-
 import os
-import re
-import sys
 import math
 import random
 import json
@@ -22,15 +19,14 @@ import tensorflow as tf
 from tensorflow.python.ops import gen_audio_ops as audio_ops
 from tensorflow.python.platform import gfile
 
-
 # Pre-define parameters
-MAX_NUM_WAVS_PER_CLASS = 2**27 - 1   # 134M
+MAX_NUM_WAVS_PER_CLASS = 2 ** 27 - 1  # 134M
 RANDOM_SEED = 59185
-BACKGROUND_NOISE_DIR_NAME = "_background_noise_"    # directory name of noise, here we use noise download from internet
-SILENCE_LABEL = "_silence_"     # define silence label which means no keywords in audio
-SILENCE_INDEX = 0               # the index of label
-UNKNOWN_LABEL = "_unknown_"     # unknown label means others words in audio
-UNKNOWN_INDEX = 1               # index
+BACKGROUND_NOISE_DIR_NAME = "_background_noise_"  # directory name of noise, here we use noise download from internet
+SILENCE_LABEL = "_silence_"  # define silence label which means no keywords in audio
+SILENCE_INDEX = 0  # the index of label
+UNKNOWN_LABEL = "_unknown_"  # unknown label means others words in audio
+UNKNOWN_INDEX = 1  # index
 
 
 def load_wav_file(wav_filename, desired_samples):
@@ -43,7 +39,7 @@ def load_wav_file(wav_filename, desired_samples):
     Returns:
         Tuple consisting of the decoded audio and sample rate
     """
-    wav_file = tf.io.read_file(wav_filename)        # binary file
+    wav_file = tf.io.read_file(wav_filename)  # binary file
 
     # *Notes*, this api has been changed in tf2.5 as tf.audio.decode_wav, should be test.
     decoded_wav = audio_ops.decode_wav(wav_file, desired_channels=1, desired_samples=desired_samples)
@@ -91,6 +87,7 @@ class AudioProcessor(object):
     """
     Prepare audio training data.
     """
+
     # define run mode train/valid/test
     class Modes(Enum):
         training = 1
@@ -116,8 +113,8 @@ class AudioProcessor(object):
         self.words_list = prepare_words_list(wanted_words)
 
         self._tf_datasets = {}  # tf.dataset for model input
-        self.background_data = {}   # back ground data dict
-        self._set_size = {"training": 0, "validation": 0, "testing": 0}     # data size dict
+        self.background_data = {}  # back ground data dict
+        self._set_size = {"training": 0, "validation": 0, "testing": 0}  # data size dict
 
         # process logic
         self._prepare_datasets(silence_percentage, unknown_percentage, wanted_words)
@@ -187,7 +184,7 @@ class AudioProcessor(object):
         random.seed(RANDOM_SEED)
         wanted_words_index = {}
         for index, word in enumerate(wanted_words):
-            wanted_words_index[word] = index + 2    # 0: silence, 1: unknown
+            wanted_words_index[word] = index + 2  # 0: silence, 1: unknown
 
         data_index, unknown_index, all_words = self._assign_files()
 
@@ -208,7 +205,7 @@ class AudioProcessor(object):
         # It's multiplied by zero later ,so the content doesn't matter
         silence_wav_path = data_index["training"][0]["file"]
         for set_index in ["training", "validation", "testing"]:
-            set_size = len(data_index[set_index])   # get the size of set index
+            set_size = len(data_index[set_index])  # get the size of set index
             silence_size = int(math.ceil(set_size * silence_percentage / 100))
             for _ in range(silence_size):
                 data_index[set_index].append(
@@ -328,9 +325,9 @@ class AudioProcessor(object):
                                                  dtype=tf.float32)
             background_samples = background_data[background_index]
             background_offset = tf.random.uniform(shape=(),
-                                                   maxval=len(background_samples) - desired_samples,
-                                                   dtype=tf.float32)
-            background_clips = background_samples[background_offset:(background_offset+desired_samples)]
+                                                  maxval=len(background_samples) - desired_samples,
+                                                  dtype=tf.float32)
+            background_clips = background_samples[background_offset:(background_offset + desired_samples)]
             background_reshape = tf.reshape(background_clips, [desired_samples, 1])
             if tf.random.uniform(shape=(), maxval=1) < background_frequency:
                 background_volume = tf.random.uniform(shape=(), maxval=background_volume_range)
@@ -352,4 +349,5 @@ class AudioProcessor(object):
                               model_settings["window_stride_samples"],
                               model_settings["dct_coefficient_count"])
         mfcc = tf.reshape(mfcc, [-1])
+        print("print shape of mfcc feature: {}".format(mfcc.shape()))
         return mfcc, label
