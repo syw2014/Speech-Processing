@@ -5,7 +5,9 @@
 # PythonVersion: python3.6
 # Date    : 2021/6/7 14:12
 # Software: PyCharm
-"""To process audio data for keyword spotting with tf2.3.x"""
+"""To process audio data for keyword spotting with tf2.3.x
+Ref: https://github.com/ARM-software/ML-examples/tree/master/tflu-kws-cortex-m
+"""
 
 import os
 import math
