@@ -120,6 +120,47 @@ class AudioProcessor(object):
 
         # process logic
         self._prepare_datasets(silence_percentage, unknown_percentage, wanted_words)
+        self._prepare_background_data()
+
+
+    def get_data(self, mode, background_frequency=0, background_volume_range=0, time_shift=0):
+        """
+        Returns the train,validation, test set fro kws model as a TF dataset.
+        Args:
+            mode: the set will be run training/validation/testing
+            background_frequency: how many of the samples have background noise mixed in
+            background_volume_range: how loud the background nose should be, 0.0~1.0
+            time_shift: range to randomly shift the training audio by in time.
+
+        Returns:
+            TF dataset that will generate tuples containing mfcc feature and label index
+
+        Raises:
+            value error: if mode not recognized
+        """
+        if mode == AudioProcessor.Modes.training:
+            dataset = self._tf_datasets["training"]
+        elif mode == AudioProcessor.Modes.validation:
+            dataset = self._tf_datasets["validation"]
+        elif mode == AudioProcessor.Modes.testing:
+            dataset = self._tf_datasets["testing"]
+        else:
+            ValueError(f"mode:{mode} not recognized, only support training/validation/testing")
+
+        use_background = (self.background_data != []) and (mode == AudioProcessor.Modes.training)
+        dataset = dataset.map(lambda path, label: self._process_wavfile(path, label,
+                                                                        self.model_setting,
+                                                                        background_frequency,
+                                                                        background_volume_range,
+                                                                        time_shift,
+                                                                        use_background,
+                                                                        self.background_data),
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+        return dataset
+
+
+
 
     def _assign_files(self):
         """
