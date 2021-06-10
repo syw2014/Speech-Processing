@@ -1,5 +1,5 @@
 1. 数据集已划分为train/valid/test
-2. 唤醒词为“hi 小问”和“你好问问”，中文唤醒词，keyword_0：“hi 小问”， keyword_id1：“你好问问”
+2. 唤醒词为“hi 小问”和“你好问问”，中文唤醒词，keyword_0：“hi,小问”， keyword_id1：“你好问问”
 
 ## Speech Command源码说明
 
