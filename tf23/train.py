@@ -20,10 +20,31 @@ parser = argparse.ArgumentParser()
 FLAGS = parser.parse_known_args()
 
 
-def save_mlir(checkpoint_dir, model):
+def save_mlir(checkpoint, model_func, out_file):
     from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
-    checkpoint = tf.train.Checkpoint()
+    fff = tf.function(model_func).get_concrete_function(tf.TensorSpec([1, 256, 256, 3]), tf.float32)
+    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(fff)
+
+    input_tensors = [
+        tensor for tensor in frozen_func.inputs
+        if tensor.dtype != tf.resource
+    ]
+
+    output_tensors = frozen_func.outputs
+    graph_def = run_graph_optimizations(
+        graph_def,
+        input_tensors,
+        output_tensors,
+        config=get_grappler_config(['pruning', 'function', 'constfold', 'shape', 'remap',
+                                    'memory', 'common_subgraph_elimination', 'arithmetic',
+                                    'loop', 'dependency', 'debug_stripper']),
+        graph=frozen_func.graph)
+
+    tf_mlir_graph = tf.mlir.experimental.convert_graph_def(graph_def)
+    outfile = open(out_file, 'wb')
+    outfile.write(tf_mlir_graph.encode())
+    outfile.close()
 
 
 
@@ -104,7 +125,8 @@ def train():
 
     # =================checkpoint to mlir===================#
     # TODO, convert checkpoint to mlir format
-    checkpoint.restore(checkpoint_dir)
+    # checkpoint.restore(checkpoint_dir)
+    # save_mlir(checkpoint, model, FLAGS.mlir_file)
 
 
 if __name__ == "__main__":
@@ -195,8 +217,10 @@ if __name__ == "__main__":
                         nargs="+",
                         default=[],
                         help="model parameters specified with different model")
-
-
+    parser.add_argument("--mlir_file",
+                        type=str,
+                        default="/cnn.mlir",
+                        help="model parameters specified with different model")
 
     # train model
     train()
