@@ -122,7 +122,6 @@ class AudioProcessor(object):
         self._prepare_datasets(silence_percentage, unknown_percentage, wanted_words)
         self._prepare_background_data()
 
-
     def get_data(self, mode, background_frequency=0, background_volume_range=0, time_shift=0):
         """
         Returns the train,validation, test set fro kws model as a TF dataset.
@@ -158,9 +157,6 @@ class AudioProcessor(object):
                               num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
         return dataset
-
-
-
 
     def _assign_files(self):
         """
