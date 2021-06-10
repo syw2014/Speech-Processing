@@ -132,7 +132,7 @@ def train():
 if __name__ == "__main__":
     parser.add_argument("--data_dir",
                         type=str,
-                        default="",
+                        default="/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset",
                         help="directory of audio wav file")
     parser.add_argument("--background_volume",
                         type=float,
@@ -149,7 +149,7 @@ if __name__ == "__main__":
                         help="how many of the training data should be silence")
     parser.add_argument("--unknown_percentage",
                         type=float,
-                        default=10.,
+                        default=10.0,
                         help="how much of the training data should be unknown words")
     parser.add_argument("--time_shift_ms",
                         type=float,
@@ -194,7 +194,7 @@ if __name__ == "__main__":
                         help="how many items to train with at once")
     parser.add_argument("--summaries_dir",
                         type=str,
-                        default="",
+                        default="./result/train_summary",
                         help="summary directory")
     parser.add_argument("--wanted_words",
                         type=str,
@@ -202,7 +202,7 @@ if __name__ == "__main__":
                         help="keywords list")
     parser.add_argument("--train_dir",
                         type=str,
-                        default="",
+                        default="./result/models",
                         help="train folder")
     parser.add_argument("--start_checkpoint",
                         type=str,
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_size_info",
                         type=int,
                         nargs="+",
-                        default=[],
+                        default=[64, 8, 20, 1, 1, 64, 4, 20, 1, 1, 512, 512],
                         help="model parameters specified with different model")
     parser.add_argument("--mlir_file",
                         type=str,
