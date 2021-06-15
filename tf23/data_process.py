@@ -21,6 +21,8 @@ import tensorflow as tf
 from tensorflow.python.ops import gen_audio_ops as audio_ops
 from tensorflow.python.platform import gfile
 
+tf.compat.v1.disable_eager_execution()
+
 # Pre-define parameters
 MAX_NUM_WAVS_PER_CLASS = 2 ** 27 - 1  # 134M
 RANDOM_SEED = 59185
@@ -35,7 +37,7 @@ def load_wav_file(wav_filename, desired_samples):
     """
     Loads and decodes a given a 16bit PCM wav file to a float tensor
     Args:
-        wav_filename:  filename of audio
+        wav_filename:  16bit PCM wav filename of audio
         desired_samples: number of samples from the audio fiel.
 
     Returns:
@@ -120,9 +122,11 @@ class AudioProcessor(object):
 
         # process logic
         self._prepare_datasets(silence_percentage, unknown_percentage, wanted_words)
+        print("Start process background data...")
         self._prepare_background_data()
+        print("End process background data")
 
-    def get_data(self, mode, background_frequency=0, background_volume_range=0, time_shift=0):
+    def get_data(self, mode, background_frequency=0.0, background_volume_range=0.0, time_shift=0.0):
         """
         Returns the train,validation, test set fro kws model as a TF dataset.
         Args:
@@ -171,9 +175,12 @@ class AudioProcessor(object):
         all_words = {}
 
         # Note, here we process mobvoi_hot_dataset, should change with your own data
-        resouce_files = os.path.join(self.data_dir + "/mobvoi_hotword_dataset_resources", "*.json")
+        resource_files = os.path.join(self.data_dir + "/mobvoi_hotword_dataset_resources", "*.json")
+        print("test->", resource_files)
+        print("test->", tf.io.gfile.glob(resource_files))
         # TODO, gfile to use system package not tf
-        for json_path in gfile(resouce_files):
+        for json_path in tf.io.gfile.glob(resource_files):
+            print(json_path)
             _, filename = os.path.split(json_path)
             # choose which set and whether unknown
             set_index = ""
@@ -190,8 +197,8 @@ class AudioProcessor(object):
             with open(json_path) as f:
                 jdata = json.load(f)
                 for x in jdata:
-                    if x["keyowrd_id"] == 0:
-                        word = "hi, xiaowen"
+                    if x["keyword_id"] == 0:
+                        word = "hixiaowen"
                     elif x["keyword_id"] == 1:
                         word = "nihaowenwen"
                     elif x["keyword_id"] == -1:
@@ -238,7 +245,7 @@ class AudioProcessor(object):
                 word_to_index[word] = wanted_words_index[word]
             else:
                 word_to_index[word] = UNKNOWN_INDEX
-        word_to_index[SILENCE_INDEX] = SILENCE_INDEX
+        word_to_index[SILENCE_LABEL] = SILENCE_INDEX
 
         # we need an arbitrary file to load as the input for the silence samples
         # It's multiplied by zero later ,so the content doesn't matter
@@ -274,18 +281,22 @@ class AudioProcessor(object):
 
         """
         background_data = []
-        background_dir = Path(self.data_dir / BACKGROUND_NOISE_DIR_NAME)
-        if not background_dir.exists():
+        background_dir = self.data_dir + "/" + BACKGROUND_NOISE_DIR_NAME
+        if not os.path.exists(background_dir):
             raise Exception("Noise data directory: {} not exist.".format(background_dir))
             return
 
-        search_path = Path(background_dir / "*.wav")
-        for wav_path in tf.io.gfile(str(search_path)):
+        search_path = os.path.join(background_dir + "/", '*.wav')
+        for wav_path in tf.io.gfile.glob(search_path):
             wav_data, _ = load_wav_file(wav_path, desired_samples=-1)
-            background_data.append(wav_data)
-
+            background_data.append(tf.reshape(wav_data, [-1]))
+        
+        print("Test->" , background_data)
         if not background_data:
             raise Exception("No background wav files were found in " + search_path)
+
+        # ragged tensor as wee cant use lists in tf dataset map functions
+        self.background_data = tf.ragged.stack(background_data)
 
     def get_set_size(self, mode):
         """
@@ -343,7 +354,7 @@ class AudioProcessor(object):
             time_shift_amount = tf.random.uniform(shape=(),
                                                   minval=-time_shift_samples,
                                                   maxval=time_shift_samples,
-                                                  dtype=tf.float32)
+                                                  dtype=tf.int32)
         else:
             time_shift_amount = 0
 
@@ -361,11 +372,13 @@ class AudioProcessor(object):
         if use_background:
             background_index = tf.random.uniform(shape=(),
                                                  maxval=len(background_data),
-                                                 dtype=tf.float32)
+                                                 dtype=tf.int32)
+            print("Test->", background_index)
+            print("Test-> ", tf.executing_eagerly())
             background_samples = background_data[background_index]
             background_offset = tf.random.uniform(shape=(),
                                                   maxval=len(background_samples) - desired_samples,
-                                                  dtype=tf.float32)
+                                                  dtype=tf.int32)
             background_clips = background_samples[background_offset:(background_offset + desired_samples)]
             background_reshape = tf.reshape(background_clips, [desired_samples, 1])
             if tf.random.uniform(shape=(), maxval=1) < background_frequency:
@@ -388,5 +401,5 @@ class AudioProcessor(object):
                               model_settings["window_stride_samples"],
                               model_settings["dct_coefficient_count"])
         mfcc = tf.reshape(mfcc, [-1])
-        print("print shape of mfcc feature: {}".format(mfcc.shape()))
+        #print("print shape of mfcc feature: {}".format(mfcc.shape().as_list()))
         return mfcc, label
