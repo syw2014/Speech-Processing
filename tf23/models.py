@@ -30,9 +30,9 @@ def prepare_model_settings(label_count,
     Returns:
         Dictionary containing common settings.
     """
-    desired_samples = int(sample_rate * clip_duration_ms) / 1000        # 期望sample个数
-    window_size_samples = int(sample_rate * window_size_ms) / 1000      # 单window内sample 个数
-    window_stride_samples = int(sample_rate * window_stride_ms) / 1000  # window 滑动几个sample
+    desired_samples = int(sample_rate * clip_duration_ms / 1000)        # 期望sample个数
+    window_size_samples = int(sample_rate * window_size_ms / 1000)      # 单window内sample 个数
+    window_stride_samples = int(sample_rate * window_stride_ms / 1000)  # window 滑动几个sample
     length_minus_window = (desired_samples - window_size_samples)       # 期望和实际的差
     if length_minus_window < 0:
         spectrogram_length = 0
@@ -48,7 +48,8 @@ def prepare_model_settings(label_count,
         "dct_coefficient_count": dct_coefficient_count,
         "fingerprint_size": fingerprint_size,
         "label_count": label_count,
-        "sample_rate": sample_rate
+        "sample_rate": sample_rate,
+        "spectrogram_length":spectrogram_length
     }
 
 
@@ -185,7 +186,7 @@ def create_cnn_model(model_settings, model_size_info):
     x = tf.keras.layers.Dropout(rate=0)(x)
 
     # output
-    output = tf.keras.layers.Dense(units=model_settings["label_count"], activation="softmax")
+    output = tf.keras.layers.Dense(units=model_settings["label_count"], activation="softmax")(x)
 
     return tf.keras.Model(inputs, output)
 
