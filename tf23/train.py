@@ -10,14 +10,17 @@
 import argparse
 from pathlib import Path
 
+#import tensorflow.compat.v1.keras.backend as K
 import tensorflow as tf
+#tf.compat.v1.disable_eager_execution()
+
 import numpy as np
 
 import data_process
 import models
 
-parser = argparse.ArgumentParser()
-FLAGS = parser.parse_known_args()
+#parser = argparse.ArgumentParser()
+#FLAGS,_ = parser.parse_known_args()
 
 
 def save_mlir(checkpoint, model_func, out_file):
@@ -54,7 +57,7 @@ def train():
                                                    FLAGS.sample_rate,
                                                    FLAGS.clip_duration_ms,
                                                    FLAGS.window_size_ms,
-                                                   FLAGS.window_stride_ms,
+                                                   FLAGS.window_strides_ms,
                                                    FLAGS.dct_coefficient_count)
 
     # Create model
@@ -63,17 +66,17 @@ def train():
                                 FLAGS.model_size_info)
 
     # Create checkpoint for convert mlir
-    checkpoint = tf.train.Checkpoint(model)
-
+    #checkpoint = tf.train.Checkpoint(model)
+    print("test->", FLAGS.wanted_words)
     # audio processor
     audio_processor = data_process.AudioProcessor(data_dir=FLAGS.data_dir,
                                                   silence_percentage=FLAGS.silence_percentage,
                                                   unknown_percentage=FLAGS.unknown_percentage,
-                                                  wanted_words=FLAGS.wanted_words,
+                                                  wanted_words=FLAGS.wanted_words.split(","),
                                                   model_settings=model_settings)
 
     # decaay learning rate in a constant piecewise way
-    training_steps_list = list(map(int, FLAGS.how_may_training_steps.split(",")))
+    training_steps_list = list(map(int, FLAGS.how_many_train_steps.split(",")))
     learning_rates_list = list(map(float, FLAGS.learning_rate.split(",")))
     lr_boundary_list = training_steps_list[:-1]     # only need values at which to change lr
     lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=lr_boundary_list,
@@ -89,11 +92,13 @@ def train():
     train_dataset = audio_processor.get_data(audio_processor.Modes.training,
                                           FLAGS.background_frequency,
                                           FLAGS.background_volume,
-                                          int((FLAGS.time_shift_ms * FLAGS.samples_rate) / 1000))
-    train_dataset = train_dataset.repeat().batch(FLAGS.batch_size).prefetch(1)
+                                          int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
+    buffer_size = audio_processor.get_set_size(audio_processor.Modes.training)
+    print("train set set:", buffer_size)
+    train_dataset = train_dataset.shuffle(buffer_size=buffer_size).repeat().batch(FLAGS.batch_size).prefetch(1)
 
     val_dataset = audio_processor.get_data(audio_processor.Modes.validation)
-    val_dataset = val_dataset.batch(FLAGS.batch_size).prefeatch(1)
+    val_dataset = val_dataset.batch(FLAGS.batch_size).prefetch(1)
 
     # calculate how many epochs because we train for a max number of iterations
     train_max_steps = np.sum(training_steps_list)
@@ -104,7 +109,7 @@ def train():
     train_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_dir = train_dir / (FLAGS.model_architecture + "_{val_acc:.3f}_ckpt")
     model_checkpoint_call_back = tf.keras.callbacks.ModelCheckpoint(
-        filepath=(checkpoint_dir),
+            filepath=(train_dir / (FLAGS.model_architecture+ "_{val_accuracy:.3f}_ckpt")),
         save_weights_only=True,
         monitor="val_accuracy",
         mode="max",
@@ -114,14 +119,17 @@ def train():
     model.fit(x=train_dataset,
               steps_per_epoch=FLAGS.eval_step_interval,
               validation_data=val_dataset,
-              callbacks=[model_checkpoint_call_back])
+              callbacks=[model_checkpoint_call_back],
+              verbose=1,
+              epochs=int(train_max_epochs/10))
 
+    print("Training model finshed, start to test...")
     # test and save model
     test_dataset = audio_processor.get_data(audio_processor.Modes.testing)
     test_dataset = test_dataset.batch(FLAGS.batch_size)
 
     test_loss, test_acc = model.evaluate(test_dataset)
-    print(f"Final test accuracy:{test_acc*100:0.2f} loss:{test_loss}")
+    print(f"Final test accuracy:{test_acc:0.2f} loss:{test_loss:0.3f}")
 
     # =================checkpoint to mlir===================#
     # TODO, convert checkpoint to mlir format
@@ -130,9 +138,12 @@ def train():
 
 
 if __name__ == "__main__":
+    
+    parser = argparse.ArgumentParser() 
+    
     parser.add_argument("--data_dir",
                         type=str,
-                        default="/home/yw.shi/projects/5.asr/data/mobvoi_hotwords_dataset",
+                        default="/home/yw.shi/develop/projects/5.asr/data/mobvoi_hotwords_dataset",
                         help="directory of audio wav file")
     parser.add_argument("--background_volume",
                         type=float,
@@ -198,7 +209,7 @@ if __name__ == "__main__":
                         help="summary directory")
     parser.add_argument("--wanted_words",
                         type=str,
-                        default="nihaoxiaowen,chunmenwenwen",
+                        default="hixiaowen,nihaowenwen",
                         help="keywords list")
     parser.add_argument("--train_dir",
                         type=str,
@@ -222,5 +233,7 @@ if __name__ == "__main__":
                         default="/cnn.mlir",
                         help="model parameters specified with different model")
 
+#    parser = argparse.ArgumentParser()
+    FLAGS, _  = parser.parse_known_args()
     # train model
     train()
