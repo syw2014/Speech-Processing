@@ -9,24 +9,18 @@
 
 import argparse
 from pathlib import Path
-
-#import tensorflow.compat.v1.keras.backend as K
 import tensorflow as tf
-#tf.compat.v1.disable_eager_execution()
 
 import numpy as np
 
 import data_process
 import models
 
-#parser = argparse.ArgumentParser()
-#FLAGS,_ = parser.parse_known_args()
-
 
 def save_mlir(checkpoint, model_func, out_file):
     from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
-    fff = tf.function(model_func).get_concrete_function(tf.TensorSpec([1, 256, 256, 3]), tf.float32)
+    fff = tf.function(model_func).get_concrete_function(tf.TensorSpec([None, 3920]), tf.float32)
     frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(fff)
 
     input_tensors = [
@@ -50,8 +44,6 @@ def save_mlir(checkpoint, model_func, out_file):
     outfile.close()
 
 
-
-
 def train():
     model_settings = models.prepare_model_settings(len(data_process.prepare_words_list(FLAGS.wanted_words.split(","))),
                                                    FLAGS.sample_rate,
@@ -66,7 +58,7 @@ def train():
                                 FLAGS.model_size_info)
 
     # Create checkpoint for convert mlir
-    #checkpoint = tf.train.Checkpoint(model)
+    # checkpoint = tf.train.Checkpoint(model)
     print("test->", FLAGS.wanted_words)
     # audio processor
     audio_processor = data_process.AudioProcessor(data_dir=FLAGS.data_dir,
@@ -78,7 +70,7 @@ def train():
     # decaay learning rate in a constant piecewise way
     training_steps_list = list(map(int, FLAGS.how_many_train_steps.split(",")))
     learning_rates_list = list(map(float, FLAGS.learning_rate.split(",")))
-    lr_boundary_list = training_steps_list[:-1]     # only need values at which to change lr
+    lr_boundary_list = training_steps_list[:-1]  # only need values at which to change lr
     lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=lr_boundary_list,
                                                                        values=learning_rates_list)
 
@@ -90,9 +82,9 @@ def train():
 
     # prepare datasets
     train_dataset = audio_processor.get_data(audio_processor.Modes.training,
-                                          FLAGS.background_frequency,
-                                          FLAGS.background_volume,
-                                          int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
+                                             FLAGS.background_frequency,
+                                             FLAGS.background_volume,
+                                             int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
     buffer_size = audio_processor.get_set_size(audio_processor.Modes.training)
     print("train set set:", buffer_size)
     train_dataset = train_dataset.shuffle(buffer_size=buffer_size).repeat().batch(FLAGS.batch_size).prefetch(1)
@@ -109,7 +101,7 @@ def train():
     train_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_dir = train_dir / (FLAGS.model_architecture + "_{val_acc:.3f}_ckpt")
     model_checkpoint_call_back = tf.keras.callbacks.ModelCheckpoint(
-            filepath=(train_dir / (FLAGS.model_architecture+ "_{val_accuracy:.3f}_ckpt")),
+        filepath=(train_dir / (FLAGS.model_architecture + "_{val_accuracy:.3f}_ckpt")),
         save_weights_only=True,
         monitor="val_accuracy",
         mode="max",
@@ -121,7 +113,7 @@ def train():
               validation_data=val_dataset,
               callbacks=[model_checkpoint_call_back],
               verbose=1,
-              epochs=int(train_max_epochs/10))
+              epochs=int(train_max_epochs / 10))
 
     print("Training model finshed, start to test...")
     # test and save model
@@ -138,9 +130,8 @@ def train():
 
 
 if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser() 
-    
+    parser = argparse.ArgumentParser()
+
     parser.add_argument("--data_dir",
                         type=str,
                         default="/home/yw.shi/develop/projects/5.asr/data/mobvoi_hotwords_dataset",
@@ -233,7 +224,7 @@ if __name__ == "__main__":
                         default="/cnn.mlir",
                         help="model parameters specified with different model")
 
-#    parser = argparse.ArgumentParser()
-    FLAGS, _  = parser.parse_known_args()
+    #    parser = argparse.ArgumentParser()
+    FLAGS, _ = parser.parse_known_args()
     # train model
     train()

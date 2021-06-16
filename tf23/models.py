@@ -30,10 +30,10 @@ def prepare_model_settings(label_count,
     Returns:
         Dictionary containing common settings.
     """
-    desired_samples = int(sample_rate * clip_duration_ms / 1000)        # 期望sample个数
-    window_size_samples = int(sample_rate * window_size_ms / 1000)      # 单window内sample 个数
+    desired_samples = int(sample_rate * clip_duration_ms / 1000)  # 期望sample个数
+    window_size_samples = int(sample_rate * window_size_ms / 1000)  # 单window内sample 个数
     window_stride_samples = int(sample_rate * window_stride_ms / 1000)  # window 滑动几个sample
-    length_minus_window = (desired_samples - window_size_samples)       # 期望和实际的差
+    length_minus_window = (desired_samples - window_size_samples)  # 期望和实际的差
     if length_minus_window < 0:
         spectrogram_length = 0
     else:
@@ -49,7 +49,7 @@ def prepare_model_settings(label_count,
         "fingerprint_size": fingerprint_size,
         "label_count": label_count,
         "sample_rate": sample_rate,
-        "spectrogram_length":spectrogram_length
+        "spectrogram_length": spectrogram_length
     }
 
 
@@ -88,7 +88,7 @@ def create_dnn_model(model_settings, model_size_info):
     Returns:
         A tf.keras Model with the requested architecture
     """
-    inputs = tf.keras.Input(shape=(model_settings["fingerprint_size"], ), name="input")
+    inputs = tf.keras.Input(shape=(model_settings["fingerprint_size"],), name="input")
 
     # First fully connected layer
     x = tf.keras.layers.Dense(units=model_size_info[0], activation="relu")(inputs)
@@ -120,17 +120,17 @@ def create_cnn_model(model_settings, model_size_info):
 
     # extract cnn hyper-parameters from model_size_info
     first_layer_count = model_size_info[0]
-    first_layer_height = model_size_info[1]     # time axis
-    first_layer_width = model_size_info[2]      # frequency axis
-    first_layer_stride_y = model_size_info[3]   # time axis
-    first_layer_stride_x = model_size_info[4]   # frequency axis
+    first_layer_height = model_size_info[1]  # time axis
+    first_layer_width = model_size_info[2]  # frequency axis
+    first_layer_stride_y = model_size_info[3]  # time axis
+    first_layer_stride_x = model_size_info[4]  # frequency axis
 
     # second layer
     second_layer_count = model_size_info[5]
-    second_layer_height = model_size_info[6]     # time axis
-    second_layer_width = model_size_info[7]      # frequency axis
-    second_layer_stride_y = model_size_info[8]   # time axis
-    second_layer_stride_x = model_size_info[9]   # frequency axis
+    second_layer_height = model_size_info[6]  # time axis
+    second_layer_width = model_size_info[7]  # frequency axis
+    second_layer_stride_y = model_size_info[8]  # time axis
+    second_layer_stride_x = model_size_info[9]  # frequency axis
 
     linear_layer_size = model_size_info[10]
     fc_size = model_size_info[11]
@@ -143,9 +143,9 @@ def create_cnn_model(model_settings, model_size_info):
 
     # first conv layer
     x = tf.keras.layers.Conv2D(filters=first_layer_count,
-                            kernel_size=(first_layer_height, first_layer_width),
-                            strides=(first_layer_stride_y, first_layer_stride_x),
-                            padding="SAME")(x)
+                               kernel_size=(first_layer_height, first_layer_width),
+                               strides=(first_layer_stride_y, first_layer_stride_x),
+                               padding="SAME")(x)
 
     # TODO, use bath norm
     # x = tf.keras.layers.BatchNormalization(x)

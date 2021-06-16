@@ -290,8 +290,8 @@ class AudioProcessor(object):
         for wav_path in tf.io.gfile.glob(search_path):
             wav_data, _ = load_wav_file(wav_path, desired_samples=-1)
             background_data.append(tf.reshape(wav_data, [-1]))
-        
-        print("Test->" , background_data)
+
+        print("Test->", background_data)
         if not background_data:
             raise Exception("No background wav files were found in " + search_path)
 
@@ -401,5 +401,5 @@ class AudioProcessor(object):
                               model_settings["window_stride_samples"],
                               model_settings["dct_coefficient_count"])
         mfcc = tf.reshape(mfcc, [-1])
-        #print("print shape of mfcc feature: {}".format(mfcc.shape().as_list()))
+        # print("print shape of mfcc feature: {}".format(mfcc.shape().as_list()))
         return mfcc, label
