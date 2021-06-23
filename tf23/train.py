@@ -67,7 +67,7 @@ def train():
                                                   wanted_words=FLAGS.wanted_words.split(","),
                                                   model_settings=model_settings)
 
-    # decaay learning rate in a constant piecewise way
+    # decay learning rate in a constant piecewise way
     training_steps_list = list(map(int, FLAGS.how_many_train_steps.split(",")))
     learning_rates_list = list(map(float, FLAGS.learning_rate.split(",")))
     lr_boundary_list = training_steps_list[:-1]  # only need values at which to change lr
