@@ -21,7 +21,10 @@ import tensorflow as tf
 from tensorflow.python.ops import gen_audio_ops as audio_ops
 from tensorflow.python.platform import gfile
 
+import tensorflow_io as tfio
+
 tf.compat.v1.disable_eager_execution()
+#tf.compat.v1.enable_eager_execution()
 
 # Pre-define parameters
 MAX_NUM_WAVS_PER_CLASS = 2 ** 27 - 1  # 134M
@@ -125,6 +128,9 @@ class AudioProcessor(object):
         print("Start process background data...")
         self._prepare_background_data()
         print("End process background data")
+        print("LOG-> train dataset size: ",self._set_size["training"]) 
+        print("LOG-> dev dataset size: ", self._set_size["validation"])
+        print("LOG-> test dataset size: ", self._set_size["testing"])
 
     def get_data(self, mode, background_frequency=0.0, background_volume_range=0.0, time_shift=0.0):
         """
@@ -175,7 +181,7 @@ class AudioProcessor(object):
         all_words = {}
 
         # Note, here we process mobvoi_hot_dataset, should change with your own data
-        resource_files = os.path.join(self.data_dir + "/mobvoi_hotword_dataset_resources", "*.json")
+        resource_files = os.path.join(self.data_dir + "/xiaoshun/datasets/resources/", "*.json")
         print("test->", resource_files)
         print("test->", tf.io.gfile.glob(resource_files))
         # TODO, gfile to use system package not tf
@@ -194,16 +200,18 @@ class AudioProcessor(object):
                 raise ValueError("Unknown mode found in filename: {}".format(filename))
             unknown = False if filename.startswith("p") else True
 
-            with open(json_path) as f:
+            with open(json_path, encoding="utf-8") as f:
                 jdata = json.load(f)
+                random.shuffle(jdata)
                 for x in jdata:
                     if x["keyword_id"] == 0:
-                        word = "hixiaowen"
+                        word = "nihaoxiaoshun"
                     elif x["keyword_id"] == 1:
-                        word = "nihaowenwen"
+                        word = "xiaoshunxiaoshun"
                     elif x["keyword_id"] == -1:
                         word = UNKNOWN_LABEL
-                    wav_path = os.path.join(self.data_dir, "temp/mobvoi_hotword_dataset/" + x["utt_id"] + ".wav")
+                    wav_path = os.path.join(self.data_dir+"/xiaoshun/datasets/temp/audios", x["utt_id"] + ".wav")
+                    #print("Test-2->", wav_path)
                     if unknown:
                         unkonwn_index[set_index].append({"label": word, "file": wav_path})
                     else:
@@ -291,7 +299,7 @@ class AudioProcessor(object):
             wav_data, _ = load_wav_file(wav_path, desired_samples=-1)
             background_data.append(tf.reshape(wav_data, [-1]))
 
-        print("Test->", background_data)
+        print("Test-1>", background_data)
         if not background_data:
             raise Exception("No background wav files were found in " + search_path)
 
@@ -348,7 +356,16 @@ class AudioProcessor(object):
         # Make out own silence audio data.
         if label == SILENCE_INDEX:
             audio_tensor = tf.multiply(audio_tensor, 0)
-
+        """
+        else:
+            # Data argumentation
+            audio_clean = tf.constant(0.0, shape=(2, 1), dtype=tf.float32)
+            position = tfio.experimental.audio.trim(audio_tensor, axis=0, epsilon=0.1)
+            start = tf.reshape(position[0],shape=())
+            stop = tf.reshape(position[1], shape=())
+            audio_slice = audio_tensor[start : stop]
+            audio_tensor = tf.concat([audio_clean, audio_slice], axis=0)
+        """
         # Shift samples start position and pad any gaps with zeros
         if time_shift_samples > 0:
             time_shift_amount = tf.random.uniform(shape=(),
@@ -400,6 +417,7 @@ class AudioProcessor(object):
                               model_settings["window_size_samples"],
                               model_settings["window_stride_samples"],
                               model_settings["dct_coefficient_count"])
+        #print("print shape of mfcc feature: {}".format(mfcc.shape()))
         mfcc = tf.reshape(mfcc, [-1])
-        # print("print shape of mfcc feature: {}".format(mfcc.shape().as_list()))
+        #print("print shape of mfcc feature: {}".format(mfcc.shape()))
         return mfcc, label
