@@ -12,14 +12,18 @@ from pathlib import Path
 import tensorflow as tf
 
 import numpy as np
-
+import wandb
+from wandb.keras import WandbCallback
 import data_process
 import models
+tf.compat.v1.enable_eager_execution()
+from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
 
+#wandb.init(project="keyword-spotting")
+#wandb.run.name="kws-cnn"
 
 def save_mlir(checkpoint, model_func, out_file):
-    from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
-    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
     fff = tf.function(model_func).get_concrete_function(tf.TensorSpec([None, 3920]), tf.float32)
     frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(fff)
 
@@ -58,7 +62,7 @@ def train():
                                 FLAGS.model_size_info)
 
     # Create checkpoint for convert mlir
-    # checkpoint = tf.train.Checkpoint(model)
+    #checkpoint = tf.train.Checkpoint(model)
     print("test->", FLAGS.wanted_words)
     # audio processor
     audio_processor = data_process.AudioProcessor(data_dir=FLAGS.data_dir,
@@ -67,7 +71,7 @@ def train():
                                                   wanted_words=FLAGS.wanted_words.split(","),
                                                   model_settings=model_settings)
 
-    # decay learning rate in a constant piecewise way
+    # decaay learning rate in a constant piecewise way
     training_steps_list = list(map(int, FLAGS.how_many_train_steps.split(",")))
     learning_rates_list = list(map(float, FLAGS.learning_rate.split(",")))
     lr_boundary_list = training_steps_list[:-1]  # only need values at which to change lr
@@ -76,6 +80,8 @@ def train():
 
     # specify optimizer
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
+    # Create checkpoint for convert mlir
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     model.compile(optimizer=optimizer,
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   metrics=["accuracy"])
@@ -107,13 +113,15 @@ def train():
         mode="max",
         save_best_only=True)
 
+    # Model summary
+    model.summary()
     # Train model
     model.fit(x=train_dataset,
               steps_per_epoch=FLAGS.eval_step_interval,
               validation_data=val_dataset,
-              callbacks=[model_checkpoint_call_back],
+              callbacks=[model_checkpoint_call_back,WandbCallback()],
               verbose=1,
-              epochs=int(train_max_epochs / 10))
+              epochs=train_max_epochs*3)
 
     print("Training model finshed, start to test...")
     # test and save model
@@ -121,12 +129,15 @@ def train():
     test_dataset = test_dataset.batch(FLAGS.batch_size)
 
     test_loss, test_acc = model.evaluate(test_dataset)
-    print(f"Final test accuracy:{test_acc:0.2f} loss:{test_loss:0.3f}")
-
+    print(f"LOG====>Final test accuracy:{test_acc:0.2f} loss:{test_loss:0.3f}")
+    
+    # ==========saved_model===========================#
+    model.save("./result/kws")
     # =================checkpoint to mlir===================#
+    save_path = checkpoint.save("./result/ck")
     # TODO, convert checkpoint to mlir format
-    # checkpoint.restore(checkpoint_dir)
-    # save_mlir(checkpoint, model, FLAGS.mlir_file)
+    #checkpoint.restore(save_path)
+    #save_mlir(checkpoint, model, FLAGS.mlir_file)
 
 
 if __name__ == "__main__":
@@ -134,7 +145,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--data_dir",
                         type=str,
-                        default="/home/yw.shi/develop/projects/5.asr/data/mobvoi_hotwords_dataset",
+                        default="/data1/yw.shi/data/audio/",
                         help="directory of audio wav file")
     parser.add_argument("--background_volume",
                         type=float,
@@ -142,16 +153,16 @@ if __name__ == "__main__":
                         help="how loud the background noise should be , between 0~1")
     parser.add_argument("--background_frequency",
                         type=float,
-                        default=0.8,
+                        default=0.0,
                         help="how many of the training samples have background noise mixed in")
 
     parser.add_argument("--silence_percentage",
                         type=float,
-                        default=10.0,
+                        default=70.0,
                         help="how many of the training data should be silence")
     parser.add_argument("--unknown_percentage",
                         type=float,
-                        default=10.0,
+                        default=100.0,
                         help="how much of the training data should be unknown words")
     parser.add_argument("--time_shift_ms",
                         type=float,
@@ -180,7 +191,7 @@ if __name__ == "__main__":
                         help="how many bins to use for the mfcc fingerprint")
     parser.add_argument("--how_many_train_steps",
                         type=str,
-                        default="15000, 3000",
+                        default="20000, 6000",
                         help="how many training loops to run")
     parser.add_argument("--eval_step_interval",
                         type=int,
@@ -188,7 +199,7 @@ if __name__ == "__main__":
                         help="how often to evaluate the training results")
     parser.add_argument("--learning_rate",
                         type=str,
-                        default="0.001, 0.0001",
+                        default="0.0001 ,0.00001",
                         help="how large a learning rate to use when training.")
     parser.add_argument("--batch_size",
                         type=int,
@@ -200,7 +211,7 @@ if __name__ == "__main__":
                         help="summary directory")
     parser.add_argument("--wanted_words",
                         type=str,
-                        default="hixiaowen,nihaowenwen",
+                        default="nihaoxiaoshun,xiaoshunxiaoshun",
                         help="keywords list")
     parser.add_argument("--train_dir",
                         type=str,
@@ -217,14 +228,16 @@ if __name__ == "__main__":
     parser.add_argument("--model_size_info",
                         type=int,
                         nargs="+",
-                        default=[64, 8, 20, 1, 1, 64, 4, 20, 1, 1, 512, 512],
+                        default=[64, 20, 8, 1, 1, 64, 10, 4, 1, 1, 64, 10, 4, 1, 1, 256, 256],
                         help="model parameters specified with different model")
     parser.add_argument("--mlir_file",
                         type=str,
-                        default="/cnn.mlir",
+                        default="./cnn.mlir",
                         help="model parameters specified with different model")
 
     #    parser = argparse.ArgumentParser()
     FLAGS, _ = parser.parse_known_args()
+    wandb.init(project="keyword-spotting", config=vars(parser))
+    wandb.run.name = "ds-cnn-resplit-unknown+100+silent+70"
     # train model
     train()
