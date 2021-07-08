@@ -71,7 +71,7 @@ def which_set(wav_name, valid_percentage, test_percentage):
 
 
 class DataProcess(object):
-    def __init__(self, origin_dir, dest_dir, val_percentage=20, test_percentage=30):
+    def __init__(self, origin_dir, dest_dir, val_percentage=0.2, test_percentage=0.3):
         """
         Object to process labelling data into train/dev/test datasets
         Args:
@@ -130,11 +130,11 @@ class DataProcess(object):
             user_id = x.rsplit("\\")[-1]
             speaker_id = hashlib.md5(user_id.encode("utf-8")).hexdigest()
             self.wav_desc["speaker_id"] = speaker_id
-            # print("1=>", x)
+            print("1=>", x)
 
             for k in ["你好小顺", "小顺小顺"]:
                 paths = os.path.join(x, k)
-                # print("2=>", paths)
+                print("2=>", paths)
                 # step2, parse speaker info
                 with open(os.path.join(paths, "spearker_info.txt"), 'r', encoding="utf-8") as f:
                     line = f.readline()
@@ -153,7 +153,7 @@ class DataProcess(object):
                         wav_infos_dict[arrs[0].strip("<").rstrip(">")] = [x.strip("<").rstrip(">") for
                                                                           x in arrs[1:]]
 
-                # print(f"Parse wav info finished find {len(wav_infos_dict)} infos.")
+                print(f"Parse wav info finished find {len(wav_infos_dict)} infos.")
 
                 # Step4, audio with background noise and without nose, which was back_wav and wav_data folder
                 for wav_folder in ["back_wav", "wav_data"]:
