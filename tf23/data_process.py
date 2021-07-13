@@ -22,7 +22,7 @@ from tensorflow.python.ops import gen_audio_ops as audio_ops
 from tensorflow.python.platform import gfile
 
 import tensorflow_io as tfio
-
+import librosa
 tf.compat.v1.disable_eager_execution()
 #tf.compat.v1.enable_eager_execution()
 
@@ -34,6 +34,37 @@ SILENCE_LABEL = "_silence_"  # define silence label which means no keywords in a
 SILENCE_INDEX = 0  # the index of label
 UNKNOWN_LABEL = "_unknown_"  # unknown label means others words in audio
 UNKNOWN_INDEX = 1  # index
+
+
+
+def change_pitch(samples, sr=16000, ratio=5):
+    """
+    """
+    # only pitch 
+    samples = samples.copy()
+    """
+    data_type = samples[0].dtype()
+    samples = samples.astype("float")
+    ratio = random.uniform(-ratio, ratio)
+    samples = librosa.effects.pitch_shift(samples, sr, n_steps=ratio)
+    """
+    # change pitch and speed
+    
+    length_change = np.random.uniform(low=0.9, high=1.1)
+    speed_fac = 1.0 / length_change
+    tmp = np.interp(np.arange(0, len(samples), speed_fac), np.arange(0, len(samples)), samples)
+    min_len = min(samples.shape[0], tmp.shape[0])
+    samples *= 0
+    samples[0: min_len] = tmp[0: min_len]
+    
+
+    # add noise
+    """
+    nosise_amp = 0.005*np.random.uniform()*np.amax(samples)
+    samples = samples.astype("float64") + noise_amp * np.random.normal(size=samples.shape[0])
+    """
+    samples = samples.astype(data_type)
+    return samples
 
 
 def load_wav_file(wav_filename, desired_samples):
@@ -104,6 +135,7 @@ class AudioProcessor(object):
     def __init__(self, data_dir,
                  silence_percentage,
                  unknown_percentage,
+                 augment_percentage,
                  wanted_words,
                  model_settings):
         """
@@ -120,11 +152,13 @@ class AudioProcessor(object):
         self.words_list = prepare_words_list(wanted_words)
 
         self._tf_datasets = {}  # tf.dataset for model input
+        self._tf_datasets = {}  # tf.dataset for model input
         self.background_data = {}  # back ground data dict
+        self.augment_tf_datasets = None # data augment data dict, wav path and label, only for positive data
         self._set_size = {"training": 0, "validation": 0, "testing": 0}  # data size dict
 
         # process logic
-        self._prepare_datasets(silence_percentage, unknown_percentage, wanted_words)
+        self._prepare_datasets(silence_percentage, unknown_percentage, augment_percentage,wanted_words)
         print("Start process background data...")
         self._prepare_background_data()
         print("End process background data")
@@ -163,8 +197,25 @@ class AudioProcessor(object):
                                                                         background_volume_range,
                                                                         time_shift,
                                                                         use_background,
-                                                                        self.background_data),
+                                                                        self.background_data,
+                                                                        use_augment=False),
                               num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        # TODO, combine augment data to the train dataset
+        use_augment = (self.augment_tf_datasets != None) and (mode == AudioProcessor.Models.training)
+        if use_augment:
+            aug_dataset = self._augment_tf_dataset.map(lambda path, label: self._process_wavfile(path, label,
+                                                                        self.model_setting,
+                                                                        background_frequency,
+                                                                        background_volume_range,
+                                                                        time_shift,
+                                                                        use_background,
+                                                                        self.background_data,
+                                                                        use_augment=use_augment),
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            dataset = dataset.concatenate(aug_dataset)
+            self._set_size["training"] += len(self._augment_tf_dataset)
+            print("LOG-> augment completed,before train size: {}, after augment train set size: {}".format(
+                len(self._tf_datasets["training"]), len(self._augment_tf_dataset)+len(self._tf_datasets["training"])))
 
         return dataset
 
@@ -223,12 +274,14 @@ class AudioProcessor(object):
     def _prepare_datasets(self,
                           silence_percentage,
                           unknown_percentage,
+                          augment_percentage,
                           wanted_words):
         """
         Load audio data and convert to tf.dataset
         Args:
             silence_percentage:
             unknown_percentage:
+            augment_percentage:
             wanted_words:
 
         Returns:
@@ -255,6 +308,20 @@ class AudioProcessor(object):
                 word_to_index[word] = UNKNOWN_INDEX
         word_to_index[SILENCE_LABEL] = SILENCE_INDEX
 
+        # TODO, extract partial data as augmention, we only augment for training data
+        #augment_index = {}
+        if augment_percentage > 0.0:
+            augment_size = int(math.ceil(len(data_index["training"]) * augment_percentage / 100))
+            print("LOG-> train positive size: {}, augment size:{}".format(len(data_index["training"]), augment_size))
+            augment_index = random.sample(data_index["training"], augment_size)
+            # Transform into TF Datasets ready for easier processing later
+            labels, paths = list(zip(*[d.values() for d in augment_index]))
+            # convert label to label id
+            labels = [word_to_index[w] for w in labels]
+            self._augment_tf_dataset = tf.data.Dataset.from_tensor_slices((list(paths), labels))
+
+
+
         # we need an arbitrary file to load as the input for the silence samples
         # It's multiplied by zero later ,so the content doesn't matter
         silence_wav_path = data_index["training"][0]["file"]
@@ -272,7 +339,10 @@ class AudioProcessor(object):
             data_index[set_index].extend(unknown_index[set_index][:unknonw_size])
             # size of set index after adding silence and unknown samples
             self._set_size[set_index] = len(data_index[set_index])
-
+            
+            # TODO, here to do data augmentation
+            #if set_index == "training":
+            #    augment_size = 0
             # shuffle
             random.shuffle(data_index[set_index])
 
@@ -334,7 +404,8 @@ class AudioProcessor(object):
                          background_volume_range,
                          time_shift_samples,
                          use_background,
-                         background_data):
+                         background_data,
+                         use_augment=False):
         """
         Load wav file  and calculate mfcc features
         Args:
@@ -366,6 +437,9 @@ class AudioProcessor(object):
             audio_slice = audio_tensor[start : stop]
             audio_tensor = tf.concat([audio_clean, audio_slice], axis=0)
         """
+        # TODO, data augment
+        if use_augment:
+            audio_tensor = tf.constant(change_pitch(audio_tensor.numpy()), dtype=tf.float32)
         # Shift samples start position and pad any gaps with zeros
         if time_shift_samples > 0:
             time_shift_amount = tf.random.uniform(shape=(),
