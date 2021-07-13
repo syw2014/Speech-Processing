@@ -235,11 +235,11 @@ def create_cnn_model2(model_settings, model_size_info, training=None):
     second_layer_stride_x = model_size_info[9]  # frequency axis
 
     # third layer
-    # third_layer_count = model_size_info[10]
-    # third_layer_height = model_size_info[11]  # time axis
-    # third_layer_width = model_size_info[12]  # frequency axis
-    # third_layer_stride_y = model_size_info[13]  # time axis
-    # third_layer_stride_x = model_size_info[14]  # frequency axis
+    third_layer_count = model_size_info[10]
+    third_layer_height = model_size_info[11]  # time axis
+    third_layer_width = model_size_info[12]  # frequency axis
+    third_layer_stride_y = model_size_info[13]  # time axis
+    third_layer_stride_x = model_size_info[14]  # frequency axis
 
     linear_layer_size = model_size_info[15]
     fc_size = model_size_info[16]
@@ -280,22 +280,21 @@ def create_cnn_model2(model_settings, model_size_info, training=None):
     #                              strides=(2, 2),
     #                              padding="SAME")(x)
     # Third cnn layer
-    """ 
-    x = tf.keras.layers.Conv2D(filters=third_layer_count,
-                               kernel_size=(third_layer_height, third_layer_width),
-                               strides=(third_layer_stride_y, third_layer_stride_x),
-                               padding="SAME")(x)
+    #x = tf.keras.layers.Conv2D(filters=third_layer_count,
+    #                           kernel_size=(third_layer_height, third_layer_width),
+    #                           strides=(third_layer_stride_y, third_layer_stride_x),
+    #                           padding="VALID")(x)
 
     # TODO, use bath norm
     #x = tf.keras.layers.BatchNormalization()(x)
 
-    x = tf.keras.layers.ReLU()(x)
+    #x = tf.keras.layers.ReLU()(x)
     # TODO, train or dev
-    x = tf.keras.layers.Dropout(rate=0.5)(x, training=training)
-    x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
-                                  strides=(2, 2),
-                                  padding="SAME")(x)
-    """
+   # x = tf.keras.layers.Dropout(rate=0.5)(x, training=training)
+    #x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
+    #                              strides=(2, 2),
+    #                              padding="SAME")(x)
+    
     # Flatten for fully connected layers
     x = tf.keras.layers.Flatten()(x)
 
@@ -404,3 +403,27 @@ def create_ds_cnn_model(model_settings, model_size_info):
     output = tf.keras.layers.Dense(units=label_count, activation="softmax")(x)
 
     return tf.keras.Model(inputs, output)
+
+
+def sepconv(input_size, out_size, kernel_size, stride=1, dilation=1, padding=0):
+    return tf.keras.Sequential(
+            tf.keras.layers.
+            )
+
+
+def create_att_crnn_model(model_settings, model_size_info, training=None):
+    """
+    Build a attention-based CRNN model, ref:https://arxiv.org/abs/1803.10916
+
+    Args:
+        model_settings:
+        model_size_info:
+
+    Returns:
+         A tf.keras model with the requested architecture
+    """
+    input_frequency_size = model_setting["dct_coefficient_count"]
+    input_time_size = model_setting["spectrogram_length"]
+
+    # extract model parameters
+
