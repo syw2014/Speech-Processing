@@ -68,6 +68,7 @@ def train():
     audio_processor = data_process.AudioProcessor(data_dir=FLAGS.data_dir,
                                                   silence_percentage=FLAGS.silence_percentage,
                                                   unknown_percentage=FLAGS.unknown_percentage,
+                                                  augment_percentage=FLAGS.augment_percentage,
                                                   wanted_words=FLAGS.wanted_words.split(","),
                                                   model_settings=model_settings)
 
@@ -133,6 +134,7 @@ def train():
     
     # ==========saved_model===========================#
     model.save("./result/kws")
+    model.save("./result/kws.h5")
     # =================checkpoint to mlir===================#
     save_path = checkpoint.save("./result/ck")
     # TODO, convert checkpoint to mlir format
@@ -153,17 +155,20 @@ if __name__ == "__main__":
                         help="how loud the background noise should be , between 0~1")
     parser.add_argument("--background_frequency",
                         type=float,
-                        default=0.0,
+                        default=10.0,
                         help="how many of the training samples have background noise mixed in")
 
     parser.add_argument("--silence_percentage",
                         type=float,
-                        default=70.0,
+                        default=90.0,
                         help="how many of the training data should be silence")
     parser.add_argument("--unknown_percentage",
                         type=float,
                         default=100.0,
                         help="how much of the training data should be unknown words")
+    parser.add_argument("--augment_percentage",
+			default=0.0,
+			help="how much of the training data should be augment")
     parser.add_argument("--time_shift_ms",
                         type=float,
                         default=100.0,
@@ -191,7 +196,7 @@ if __name__ == "__main__":
                         help="how many bins to use for the mfcc fingerprint")
     parser.add_argument("--how_many_train_steps",
                         type=str,
-                        default="20000, 6000",
+                        default="15000, 6000",
                         help="how many training loops to run")
     parser.add_argument("--eval_step_interval",
                         type=int,
@@ -199,7 +204,7 @@ if __name__ == "__main__":
                         help="how often to evaluate the training results")
     parser.add_argument("--learning_rate",
                         type=str,
-                        default="0.0001 ,0.00001",
+                        default="0.0001, 0.00001",
                         help="how large a learning rate to use when training.")
     parser.add_argument("--batch_size",
                         type=int,
@@ -238,6 +243,6 @@ if __name__ == "__main__":
     #    parser = argparse.ArgumentParser()
     FLAGS, _ = parser.parse_known_args()
     wandb.init(project="keyword-spotting", config=vars(parser))
-    wandb.run.name = "ds-cnn-resplit-unknown+100+silent+70"
+    wandb.run.name = "ds-cnn-augment+30"
     # train model
     train()
