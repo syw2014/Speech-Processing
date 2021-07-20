@@ -200,7 +200,7 @@ class DataProcess(object):
 
 
 if __name__ == '__main__':
-    origin_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/6.15(10人)/"
-    dest_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/datasets"
+    origin_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/7.16(43人)/"
+    dest_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/datasets2"
     processor = DataProcess(origin_dir, dest_dir)
     processor.load_data()
