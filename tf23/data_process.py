@@ -23,8 +23,9 @@ from tensorflow.python.platform import gfile
 
 import tensorflow_io as tfio
 import librosa
+
 tf.compat.v1.disable_eager_execution()
-#tf.compat.v1.enable_eager_execution()
+# tf.compat.v1.enable_eager_execution()
 
 # Pre-define parameters
 MAX_NUM_WAVS_PER_CLASS = 2 ** 27 - 1  # 134M
@@ -34,7 +35,6 @@ SILENCE_LABEL = "_silence_"  # define silence label which means no keywords in a
 SILENCE_INDEX = 0  # the index of label
 UNKNOWN_LABEL = "_unknown_"  # unknown label means others words in audio
 UNKNOWN_INDEX = 1  # index
-
 
 
 def change_pitch(samples, sr=16000, ratio=5):
@@ -49,20 +49,18 @@ def change_pitch(samples, sr=16000, ratio=5):
     samples = librosa.effects.pitch_shift(samples, sr, n_steps=ratio)
     """
     # change pitch and speed
-    
+
     length_change = np.random.uniform(low=0.9, high=1.1)
     speed_fac = 1.0 / length_change
     tmp = np.interp(np.arange(0, len(samples), speed_fac), np.arange(0, len(samples)), samples)
     min_len = min(samples.shape[0], tmp.shape[0])
     samples *= 0
     samples[0: min_len] = tmp[0: min_len]
-    
 
     # add noise
-    """
-    nosise_amp = 0.005*np.random.uniform()*np.amax(samples)
+    nosise_amp = 0.005 * np.random.uniform() * np.amax(samples)
     samples = samples.astype("float64") + noise_amp * np.random.normal(size=samples.shape[0])
-    """
+
     samples = samples.astype(data_type)
     return samples
 
@@ -154,15 +152,15 @@ class AudioProcessor(object):
         self._tf_datasets = {}  # tf.dataset for model input
         self._tf_datasets = {}  # tf.dataset for model input
         self.background_data = {}  # back ground data dict
-        self.augment_tf_datasets = None # data augment data dict, wav path and label, only for positive data
+        self.augment_tf_datasets = None  # data augment data dict, wav path and label, only for positive data
         self._set_size = {"training": 0, "validation": 0, "testing": 0}  # data size dict
 
         # process logic
-        self._prepare_datasets(silence_percentage, unknown_percentage, augment_percentage,wanted_words)
+        self._prepare_datasets(silence_percentage, unknown_percentage, augment_percentage, wanted_words)
         print("Start process background data...")
         self._prepare_background_data()
         print("End process background data")
-        print("LOG-> train dataset size: ",self._set_size["training"]) 
+        print("LOG-> train dataset size: ", self._set_size["training"])
         print("LOG-> dev dataset size: ", self._set_size["validation"])
         print("LOG-> test dataset size: ", self._set_size["testing"])
 
@@ -204,18 +202,18 @@ class AudioProcessor(object):
         use_augment = (self.augment_tf_datasets != None) and (mode == AudioProcessor.Models.training)
         if use_augment:
             aug_dataset = self._augment_tf_dataset.map(lambda path, label: self._process_wavfile(path, label,
-                                                                        self.model_setting,
-                                                                        background_frequency,
-                                                                        background_volume_range,
-                                                                        time_shift,
-                                                                        use_background,
-                                                                        self.background_data,
-                                                                        use_augment=use_augment),
-                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                                                                                                 self.model_setting,
+                                                                                                 background_frequency,
+                                                                                                 background_volume_range,
+                                                                                                 time_shift,
+                                                                                                 use_background,
+                                                                                                 self.background_data,
+                                                                                                 use_augment=use_augment),
+                                                       num_parallel_calls=tf.data.experimental.AUTOTUNE)
             dataset = dataset.concatenate(aug_dataset)
             self._set_size["training"] += len(self._augment_tf_dataset)
             print("LOG-> augment completed,before train size: {}, after augment train set size: {}".format(
-                len(self._tf_datasets["training"]), len(self._augment_tf_dataset)+len(self._tf_datasets["training"])))
+                len(self._tf_datasets["training"]), len(self._augment_tf_dataset) + len(self._tf_datasets["training"])))
 
         return dataset
 
@@ -232,7 +230,8 @@ class AudioProcessor(object):
         all_words = {}
 
         # Note, here we process mobvoi_hot_dataset, should change with your own data
-        resource_files = os.path.join(self.data_dir + "/xiaoshun/datasets/resources/", "*.json")
+        # resource_files = os.path.join(self.data_dir + "/mobvoi_hotword_dataset_resources/", "*.json")
+        resource_files = os.path.join(self.data_dir + "/xiaoshun/full_data/resources/", "*.json")
         print("test->", resource_files)
         print("test->", tf.io.gfile.glob(resource_files))
         # TODO, gfile to use system package not tf
@@ -261,8 +260,9 @@ class AudioProcessor(object):
                         word = "xiaoshunxiaoshun"
                     elif x["keyword_id"] == -1:
                         word = UNKNOWN_LABEL
-                    wav_path = os.path.join(self.data_dir+"/xiaoshun/datasets/temp/audios", x["utt_id"] + ".wav")
-                    #print("Test-2->", wav_path)
+                    # wav_path = os.path.join(self.data_dir+"/mobvoi_hotword_dataset", x["utt_id"] + ".wav")
+                    wav_path = os.path.join(self.data_dir + "/xiaoshun/full_data/audios", x["utt_id"] + ".wav")
+                    # print("Test-2->", wav_path)
                     if unknown:
                         unkonwn_index[set_index].append({"label": word, "file": wav_path})
                     else:
@@ -309,7 +309,7 @@ class AudioProcessor(object):
         word_to_index[SILENCE_LABEL] = SILENCE_INDEX
 
         # TODO, extract partial data as augmention, we only augment for training data
-        #augment_index = {}
+        # augment_index = {}
         if augment_percentage > 0.0:
             augment_size = int(math.ceil(len(data_index["training"]) * augment_percentage / 100))
             print("LOG-> train positive size: {}, augment size:{}".format(len(data_index["training"]), augment_size))
@@ -319,8 +319,6 @@ class AudioProcessor(object):
             # convert label to label id
             labels = [word_to_index[w] for w in labels]
             self._augment_tf_dataset = tf.data.Dataset.from_tensor_slices((list(paths), labels))
-
-
 
         # we need an arbitrary file to load as the input for the silence samples
         # It's multiplied by zero later ,so the content doesn't matter
@@ -339,9 +337,9 @@ class AudioProcessor(object):
             data_index[set_index].extend(unknown_index[set_index][:unknonw_size])
             # size of set index after adding silence and unknown samples
             self._set_size[set_index] = len(data_index[set_index])
-            
+
             # TODO, here to do data augmentation
-            #if set_index == "training":
+            # if set_index == "training":
             #    augment_size = 0
             # shuffle
             random.shuffle(data_index[set_index])
@@ -359,7 +357,7 @@ class AudioProcessor(object):
 
         """
         background_data = []
-        background_dir = self.data_dir + "/" + BACKGROUND_NOISE_DIR_NAME
+        background_dir = self.data_dir + "xiaoshun/datasets/" + BACKGROUND_NOISE_DIR_NAME
         if not os.path.exists(background_dir):
             raise Exception("Noise data directory: {} not exist.".format(background_dir))
             return
@@ -491,7 +489,7 @@ class AudioProcessor(object):
                               model_settings["window_size_samples"],
                               model_settings["window_stride_samples"],
                               model_settings["dct_coefficient_count"])
-        #print("print shape of mfcc feature: {}".format(mfcc.shape()))
+        # print("print shape of mfcc feature: {}".format(mfcc.shape()))
         mfcc = tf.reshape(mfcc, [-1])
-        #print("print shape of mfcc feature: {}".format(mfcc.shape()))
+        # print("print shape of mfcc feature: {}".format(mfcc.shape()))
         return mfcc, label
