@@ -14,8 +14,7 @@ import hashlib
 import copy
 import math
 
-
-MAX_NUM_WAVS_PER_CLASS = 2 ** 27 - 1 # ~134M
+MAX_NUM_WAVS_PER_CLASS = 2 ** 27 - 1  # ~134M
 
 
 def create_ids(input):
@@ -85,7 +84,7 @@ class DataProcess(object):
         self.val_percentage = val_percentage
         self.test_percentage = test_percentage
 
-        self.all_wavs = []    # all wav info list
+        self.all_wavs = []  # all wav info list
         self.data_index = {"train": [], "valid": [], "test": []}
 
         # Detail information for an audio
@@ -121,7 +120,7 @@ class DataProcess(object):
             raise ValueError(f"Folder {self.origin_dir} not exists!")
 
         # loop folders
-        listglobs = glob.glob(os.path.join(self.origin_dir)+r"[0-9]*")
+        listglobs = glob.glob(os.path.join(self.origin_dir) + r"[0-9]*")
         count = 0
         temp = []
         for x in listglobs:
@@ -200,7 +199,7 @@ class DataProcess(object):
 
 
 if __name__ == '__main__':
-    origin_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/7.16(43人)/"
-    dest_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/datasets2"
+    origin_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/6.15(10人)/"
+    dest_dir = "E:/work/Project/Tasks/33 智能聊天助手/10.语音唤醒/3. 交付数据/datasets"
     processor = DataProcess(origin_dir, dest_dir)
     processor.load_data()
