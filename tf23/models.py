@@ -147,7 +147,6 @@ def create_cnn_model(model_settings, model_size_info, training=None):
 
     # For use 2D-convolution
     x = tf.reshape(inputs, shape=(-1, input_time_size, input_frequency_size, 1))
-    
 
     # first conv layer
     x = tf.keras.layers.Conv2D(filters=first_layer_count,
@@ -159,8 +158,8 @@ def create_cnn_model(model_settings, model_size_info, training=None):
     # TODO, train or dev
     x = tf.keras.layers.Dropout(rate=0)(x, training=training)
     x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
-                                 strides=(2, 2),
-                                 padding="SAME")(x)
+                                  strides=(2, 2),
+                                  padding="SAME")(x)
 
     # Second convolution
     x = tf.keras.layers.Conv2D(filters=second_layer_count,
@@ -197,7 +196,7 @@ def create_cnn_model(model_settings, model_size_info, training=None):
 
     # Fully connected layer with Relu activation
     x = tf.keras.layers.Dense(units=fc_size,
-            kernel_regularizer="l2")(x)
+                              kernel_regularizer="l2")(x)
 
     # output
     output = tf.keras.layers.Dense(units=model_settings["label_count"], activation="softmax")(x)
@@ -256,11 +255,11 @@ def create_cnn_model2(model_settings, model_size_info, training=None):
                                strides=(first_layer_stride_y, first_layer_stride_x),
                                padding="VALID")(x)
     # TODO, use bath norm
-    #x = tf.keras.layers.BatchNormalization()(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.ReLU()(x)
     # TODO, train or dev
-    x = tf.keras.layers.Dropout(rate=0.1)(x, training=training)
-    #x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
+    x = tf.keras.layers.Dropout(rate=0.2)(x, training=training)
+    # x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
     #                              strides=(2, 2),
     #                              padding="SAME")(x)
 
@@ -271,30 +270,30 @@ def create_cnn_model2(model_settings, model_size_info, training=None):
                                padding="VALID")(x)
 
     # TODO, use bath norm
-    #x = tf.keras.layers.BatchNormalization()(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.ReLU()(x)
     # TODO, train or dev
     x = tf.keras.layers.Dropout(rate=0.5)(x, training=training)
 
-    #x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
+    # x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
     #                              strides=(2, 2),
     #                              padding="SAME")(x)
     # Third cnn layer
-    #x = tf.keras.layers.Conv2D(filters=third_layer_count,
+    # x = tf.keras.layers.Conv2D(filters=third_layer_count,
     #                           kernel_size=(third_layer_height, third_layer_width),
     #                           strides=(third_layer_stride_y, third_layer_stride_x),
     #                           padding="VALID")(x)
 
     # TODO, use bath norm
-    #x = tf.keras.layers.BatchNormalization()(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
 
-    #x = tf.keras.layers.ReLU()(x)
+    # x = tf.keras.layers.ReLU()(x)
     # TODO, train or dev
-   # x = tf.keras.layers.Dropout(rate=0.5)(x, training=training)
-    #x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
+    # x = tf.keras.layers.Dropout(rate=0.5)(x, training=training)
+    # x = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
     #                              strides=(2, 2),
     #                              padding="SAME")(x)
-    
+
     # Flatten for fully connected layers
     x = tf.keras.layers.Flatten()(x)
 
@@ -307,7 +306,7 @@ def create_cnn_model2(model_settings, model_size_info, training=None):
     # Fully connected layer with Relu activation
     x = tf.keras.layers.Dense(units=fc_size,
                               kernel_regularizer="l2")(x)
-    #x = tf.keras.layers.BatchNormalization()(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.ReLU()(x)
     x = tf.keras.layers.Dropout(rate=0.5)(x, training=training)
 
@@ -335,8 +334,8 @@ def create_ds_cnn_model(model_settings, model_size_info):
     input_time_size = model_settings["spectrogram_length"]
 
     t_dim = input_time_size
-    f_dim = input_time_size
-
+    f_dim = input_frequency_size
+    print("raw t_dim: ", t_dim)
     # Extract model dimensions from model_size_info
     num_layers = model_size_info[0]
     conv_feat = [None] * num_layers
@@ -365,6 +364,10 @@ def create_ds_cnn_model(model_settings, model_size_info):
     # reshape the flattened input, 4-d,
     x = tf.reshape(inputs, shape=(-1, input_time_size, input_frequency_size, 1))
 
+    # TODO, add BN nad dropout
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Dropout(rate=0.1)(x)
+
     # Depthwise separable convolutions
     layer_index = 0
     for layer_index in range(0, num_layers):
@@ -376,6 +379,15 @@ def create_ds_cnn_model(model_settings, model_size_info):
                                        padding="SAME")(x)
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.ReLU()(x)
+            # x = tf.keras.layers.Dropout(rate=0.5)(x)
+            """
+            x = tf.keras.layers.Conv2D(filters=conv_feat[0],
+                                       kernel_size=(conv_kt[0], conv_kf[0]),
+                                       strides=(conv_st[0], conv_sf[0]),
+                                       padding="SAME")(x)
+            x = tf.keras.layers.BatchNormalization()(x)
+            x = tf.keras.layers.ReLU()(x)
+            """
         else:
             # Depthwise convolution
             x = tf.keras.layers.DepthwiseConv2D(kernel_size=(conv_kt[layer_index], conv_kf[layer_index]),
@@ -389,11 +401,13 @@ def create_ds_cnn_model(model_settings, model_size_info):
                                        kernel_size=(1, 1))(x)
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.ReLU()(x)
+            # x = tf.keras.layers.Dropout(rate=0.3)(x)
 
         t_dim = math.ceil(t_dim / float(conv_st[layer_index]))
         f_dim = math.ceil(f_dim / float(conv_sf[layer_index]))
 
     # Global average pool
+    print("pool size: ", t_dim, f_dim)
     x = tf.keras.layers.AveragePooling2D(pool_size=(t_dim, f_dim), strides=1)(x)
 
     # Squeeze before passing to output fully connected layer
@@ -403,27 +417,3 @@ def create_ds_cnn_model(model_settings, model_size_info):
     output = tf.keras.layers.Dense(units=label_count, activation="softmax")(x)
 
     return tf.keras.Model(inputs, output)
-
-
-def sepconv(input_size, out_size, kernel_size, stride=1, dilation=1, padding=0):
-    return tf.keras.Sequential(
-            tf.keras.layers.
-            )
-
-
-def create_att_crnn_model(model_settings, model_size_info, training=None):
-    """
-    Build a attention-based CRNN model, ref:https://arxiv.org/abs/1803.10916
-
-    Args:
-        model_settings:
-        model_size_info:
-
-    Returns:
-         A tf.keras model with the requested architecture
-    """
-    input_frequency_size = model_setting["dct_coefficient_count"]
-    input_time_size = model_setting["spectrogram_length"]
-
-    # extract model parameters
-
