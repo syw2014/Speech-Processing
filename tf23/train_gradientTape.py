@@ -18,9 +18,12 @@ import models
 from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
 
-parser = argparse.ArgumentParser()
+tf.compat.v1.enable_eager_execution()
 
-FLAGS, _ = parser.parse_known_args()
+
+# parser = argparse.ArgumentParser()
+
+# FLAGS, _ = parser.parse_known_args()
 
 
 class KeywordSpotting(object):
@@ -69,7 +72,8 @@ class KeywordSpotting(object):
 
         # calculate epochs
         train_max_steps = np.sum(training_steps_list)
-        self.epochs = int(np.ceil(train_max_steps / FLAGS.eval_step_interval))
+        # self.epochs = int(np.ceil(train_max_steps / FLAGS.eval_step_interval))
+        self.epochs = 1
 
     def calcu_loss(self, y_pred, y_true):
         """
@@ -100,7 +104,7 @@ class KeywordSpotting(object):
 
             loss = self.loss_object(input_y, output)
         #
-        gradients = tape.get_gradient(zip(loss, self.model.trainable_variables))
+        gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
         return loss, output
 
@@ -116,10 +120,10 @@ class KeywordSpotting(object):
         eval_acc = tf.keras.metrics.SparseCategoricalAccuracy()
         loss = 0.0
         cnt = 0
-        for input_x, input_y in dataset:
+        for step, (input_x, input_y) in enumerate(dataset):
             preds = self.model(input_x)
             loss += self.loss_object(input_y, preds)
-            eval_acc.update(y_true=input_y, y_pred=preds)
+            eval_acc.update_state(y_true=input_y, y_pred=preds)
             cnt += 1
         return loss, eval_acc
 
@@ -132,9 +136,9 @@ class KeywordSpotting(object):
 
         # prepare datasets
         train_dataset = self.audio_processor.get_data(self.audio_processor.Modes.training,
-                                                 FLAGS.background_frequency,
-                                                 FLAGS.background_volume,
-                                                 int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
+                                                      FLAGS.background_frequency,
+                                                      FLAGS.background_volume,
+                                                      int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
         buffer_size = self.audio_processor.get_set_size(self.audio_processor.Modes.training)
         print("train set set:", buffer_size)
         train_dataset = train_dataset.shuffle(buffer_size=buffer_size).repeat().batch(FLAGS.batch_size).prefetch(1)
@@ -147,28 +151,32 @@ class KeywordSpotting(object):
             self.train_step = tf.function(self.train_step)
 
         train_acc = tf.keras.metrics.SparseCategoricalAccuracy()
-        best_acc = 0.0
+        best_acc = 0
 
         for epoch in range(self.epochs):
             start_time = time.time()
             loss = 0
             # train on epoch
-            for input_x, input_y in train_dataset:
+            for (step, (input_x, input_y)) in enumerate(train_dataset.take(steps_per_epoch)):
                 loss, preds = self.train_step(input_x, input_y)
-                train_acc.updates(y_true=input_y, y_pred=preds)
-                print(f"Epoch {epoch}/{self.epochs} training loss:{loss:.2f} training accuracy:{train_acc:0.3f}")
+                train_acc.update_state(y_true=input_y, y_pred=preds)
+                print(
+                    f"Epoch {epoch}/{self.epochs} training loss:{loss:.2f} training accuracy:{train_acc.result().numpy():0.3f}")
             # evaluate
             eval_loss, eval_acc = self.evaluate(val_dataset)
-            print(f"Epoch {epoch}/{self.epochs} train loss:{loss:.2f} training accuracy:{train_acc:0.3f}"
-                  f" evaluation loss:{eval_loss:0.2f} eval_accuracy:{eval_acc:0.3f}")
-            if best_acc < eval_acc.result().numpy():
-                best_acc = eval_acc
+            print(
+                f"Epoch {epoch}/{self.epochs} train loss:{loss:.2f} training accuracy:{train_acc.result().numpy():0.3f}"
+                f" evaluation loss:{eval_loss:0.2f} eval_accuracy:{eval_acc.result().numpy():0.3f}")
+            t = float(eval_acc.result().numpy())
+            if best_acc < t:
+                best_acc = t
                 # store
                 self.checkpoint.save(self.check_dir)
 
     def save_mlir(self):
         manager = tf.train.CheckpointManager(self.checkpoint,
-                                             directory=self.check_dir)
+                                             directory=self.check_dir,
+                                             max_to_keep=1)
         self.checkpoint.restore(manager.latest_checkpoint)
 
         fff = tf.function(self.model).get_concrete_function(tf.TensorSpec([None, 3920]), tf.float32)
@@ -198,7 +206,9 @@ class KeywordSpotting(object):
 def main():
     kws_object = KeywordSpotting(enable_function=True)
     print("Start train...")
-    kws_object.train()
+    # kws_object.train()
+    print("start convert")
+    kws_object.save_mlir()
 
 
 if __name__ == "__main__":
@@ -206,7 +216,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--data_dir",
                         type=str,
-                        default="/home/yw.shi/develop/projects/5.asr/data/mobvoi_hotwords_dataset",
+                        default="/data1/yw.shi/data/audio/",
                         help="directory of audio wav file")
     parser.add_argument("--background_volume",
                         type=float,
@@ -299,4 +309,7 @@ if __name__ == "__main__":
     #    parser = argparse.ArgumentParser()
     FLAGS, _ = parser.parse_known_args()
     # train model
-    train()
+    kws_object = KeywordSpotting(enable_function=True)
+    print("Start train...")
+    # kws_object.train()
+    kws_object.save_mlir()
