@@ -44,8 +44,8 @@ if __name__ == '__main__':
     json_file = "wav_desc.json"
     orig_dir = "./no_trim/"
     dest_dir = "./audios/"
-    start_time = 999   # 1000 milliseconds
-    end_time = 2010     # 2000 milliseconds
+    start_time = 999  # 1000 milliseconds
+    end_time = 2010  # 2000 milliseconds
     wav_desc = None
     with open(json_file, "r", encoding="utf-8") as f:
         wav_desc = json.load(f)
