@@ -417,3 +417,25 @@ def create_ds_cnn_model(model_settings, model_size_info):
     output = tf.keras.layers.Dense(units=label_count, activation="softmax")(x)
 
     return tf.keras.Model(inputs, output)
+
+
+def sepconv(input_size, out_size, kernel_size, stride=1, dilation=1, padding=0):
+    return None
+
+
+def create_att_crnn_model(model_settings, model_size_info, training=None):
+    """
+    Build a attention-based CRNN model, ref:https://arxiv.org/abs/1803.10916
+
+    Args:
+        model_settings:
+        model_size_info:
+
+    Returns:
+         A tf.keras model with the requested architecture
+    """
+    # input_frequency_size = model_setting["dct_coefficient_count"]
+    # input_time_size = model_setting["spectrogram_length"]
+
+    # extract model parameters
+    pass
