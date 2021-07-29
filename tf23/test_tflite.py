@@ -20,8 +20,57 @@ import models
 from test import calculate_accuracy
 from tqdm import tqdm
 import time
+import os
 
 tf.compat.v1.enable_eager_execution()
+
+
+def create_test_data(feat_dir):
+    """
+    Load mfcc features from files instead of generated from tensorflow
+    Args:
+        feat_dir: directory of feature files, each file as a feature of one audio, feature dimension was 3920 the
+                same as tensorflow. feature file format <name_label>, name and label was connect by '_'
+
+    Returns:
+        np.ndarray
+    """
+    # check folder was exist
+    if not os.path.exists(feat_dir):
+        raise ValueError("Required feature folder but found {}".format(feat_dir))
+
+    file_list = os.listdir(feat_dir)
+    print("Found {} feature file in folder".format(file_list))
+    feature_array = []
+    label_array = []
+    for file in file_list:
+        arr = file.split("_")
+        if len(arr) != 2:
+            print("Required feature file contain name and label but found:{}".format(file))
+        label = arr[1]
+
+        # open file and load features
+        with open(feat_dir + "/" + file, 'r', encoding='utf-8') as f:
+            feat = []
+            for line in f.readlines():
+                vals = line.strip().split(' ')
+                vals = [float(x) for x in vals]
+                feat.extend(vals)
+            # check feature dimension was 3920
+            if len(feat) != 3920:
+                print("feature dimension was not `3920` but found {}".format(len(feat)))
+                continue
+
+            # make pair
+            feature_array.append(feat)
+            label_array.append(label)
+    if len(feature_array) != len(label_array):
+        raise ValueError("feature number was not the same as label number")
+    print("Total found {} features.".format(len(feature_array)))
+    # convert to tf.data.dataset
+    test_dataset = tf.data.Dataset.from_tensor_slices((feature_array, label_array))
+    return test_dataset
+
 
 def tflite_test(model_settings, audio_processor, tflite_path):
     """Calculate accuracy and confusion matrices on the test set.
@@ -33,7 +82,12 @@ def tflite_test(model_settings, audio_processor, tflite_path):
         audio_processor: Audio processor class object.
         tflite_path: Path to TFLite file to use for inference.
     """
-    test_data = audio_processor.get_data(audio_processor.Modes.testing).batch(1)
+    # test_data = audio_processor.get_data(audio_processor.Modes.testing).batch(1)
+
+    # test model with own feature
+    feat_dir = ""
+    test_data = create_test_data(feat_dir)
+
     expected_indices = np.concatenate([y for x, y in test_data])
     predicted_indices = []
 
@@ -43,7 +97,7 @@ def tflite_test(model_settings, audio_processor, tflite_path):
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-    #t_start = time.time()
+    # t_start = time.time()
     for mfcc, label in tqdm(test_data):
         t_start = time.time()
         print("mfcc", mfcc)
@@ -71,11 +125,11 @@ def tflite_inference(input_data, interpreter, input_details, output_details):
     Returns:
         Output from inference.
     """
-    #interpreter = interpreter_wrapper.Interpreter(model_path=tflite_path)
-    #interpreter.allocate_tensors()
+    # interpreter = interpreter_wrapper.Interpreter(model_path=tflite_path)
+    # interpreter.allocate_tensors()
 
-    #input_details = interpreter.get_input_details()
-    #output_details = interpreter.get_output_details()
+    # input_details = interpreter.get_input_details()
+    # output_details = interpreter.get_output_details()
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
 
@@ -196,7 +250,7 @@ if __name__ == '__main__':
                         help="model parameters specified with different model")
     parser.add_argument("--tflite_path",
                         type=str,
-                        #default="./kwsh5.tflite",
+                        # default="./kwsh5.tflite",
                         default="ds_cnn_quantized.tflite",
                         help="model parameters specified with different model")
 
