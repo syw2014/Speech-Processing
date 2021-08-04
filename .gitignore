@@ -8,3 +8,5 @@ keyword-spotting/.ipynb_checkpoints/
 deploy/.vscode/
 deploy/cc/*.exe
 deploy/cc/*.o
+deploy/cc/*.mfcc
+deploy/cc/*.wav
