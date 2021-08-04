@@ -6,3 +6,5 @@ keyword-spotting/build/
 keyword-spotting/main
 keyword-spotting/.ipynb_checkpoints/
 deploy/.vscode/
+deploy/cc/*.exe
+deploy/cc/*.o
