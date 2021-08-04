@@ -25,19 +25,19 @@ def prepare_model_settings(label_count,
         clip_duration_ms: length of each audio clip to be analyzed
         window_size_ms: duration of frequency analysis window
         window_stride_ms: how far move in time between frequency windows
-        dct_coefficient_count: number of freqency bins to use for analysis
+        dct_coefficient_count: number of freqency bins to use for analysis,40
 
     Returns:
         Dictionary containing common settings.
     """
-    desired_samples = int(sample_rate * clip_duration_ms / 1000)  # 期望sample个数
-    window_size_samples = int(sample_rate * window_size_ms / 1000)  # 单window内sample 个数
-    window_stride_samples = int(sample_rate * window_stride_ms / 1000)  # window 滑动几个sample
-    length_minus_window = (desired_samples - window_size_samples)  # 期望和实际的差
+    desired_samples = int(sample_rate * clip_duration_ms / 1000)  # 期望sample个数, int(16000*1000/1000)
+    window_size_samples = int(sample_rate * window_size_ms / 1000)  # 单window内sample 个数,int(16000*30/1000)
+    window_stride_samples = int(sample_rate * window_stride_ms / 1000)  # window 滑动几个sample,int(16000*10/100)
+    length_minus_window = (desired_samples - window_size_samples)  # 期望和实际的差,(16000-480)=15520
     if length_minus_window < 0:
         spectrogram_length = 0
     else:
-        spectrogram_length = 1 + int(length_minus_window / window_stride_samples)
+        spectrogram_length = 1 + int(length_minus_window / window_stride_samples) # 15520/160+1=98
     # feature dimension
     fingerprint_size = dct_coefficient_count * spectrogram_length
 
