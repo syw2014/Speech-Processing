@@ -82,6 +82,9 @@ def calculate_accuracy(predicted_indices, expected_indices):
     Returns:
         Accuracy value between 0 and 1.
     """
+    print("predicted_indices->", np.array(predicted_indices))
+    # expected_indices = [x[0] for x in expected_indices]
+    print("expected_indices->", expected_indices)
     correct_prediction = tf.equal(predicted_indices, expected_indices)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     return accuracy
