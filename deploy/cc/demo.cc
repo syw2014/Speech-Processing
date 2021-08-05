@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-02 17:58:26
- * @LastEditTime: 2021-08-04 17:18:37
+ * @LastEditTime: 2021-08-05 13:50:22
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\tfversion\demo.cc
@@ -127,7 +127,11 @@ size_t ReadWav(const std::string &filePath, std::vector<double> &data,
     std::cout << "Choose process samples size was: " << desired_samples
               << std::endl;
     for (int i = 0; i < desired_samples; ++i) {
-        data[i] = float_values[i];
+        if(i >= float_values.size()) {
+            data[i] = 0.0;  // padding
+        } else {
+            data[i] = float_values[i];
+        }
     }
 
     return 0;
