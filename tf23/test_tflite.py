@@ -40,26 +40,35 @@ def create_test_data(feat_dir):
         raise ValueError("Required feature folder but found {}".format(feat_dir))
 
     file_list = os.listdir(feat_dir)
-    print("Found {} feature file in folder".format(file_list))
+    print("Found {} feature file in folder".format(len(file_list)))
     feature_array = []
     label_array = []
     for file in file_list:
         arr = file.split("_")
         if len(arr) != 2:
             print("Required feature file contain name and label but found:{}".format(file))
-        label = arr[1]
+        label = int(arr[1])
 
         # open file and load features
         with open(feat_dir + "/" + file, 'r', encoding='utf-8') as f:
             feat = []
-            for line in f.readlines():
+            lines = list(f.readlines())
+            """
+            if len(lines) < 98:
+                lines = lines
+            else:
+                lines = lines[:98]
+            """
+            for line in lines:
                 vals = line.strip().split(' ')
                 vals = [float(x) for x in vals]
                 feat.extend(vals)
             # check feature dimension was 3920
-            if len(feat) != 3920:
+            feat = feat[:3920]
+            if len(feat) < 3920:
                 print("feature dimension was not `3920` but found {}".format(len(feat)))
-                continue
+                feat.extend([0] * (3920 - len(feat)))
+                # continue
 
             # make pair
             feature_array.append(feat)
@@ -68,7 +77,8 @@ def create_test_data(feat_dir):
         raise ValueError("feature number was not the same as label number")
     print("Total found {} features.".format(len(feature_array)))
     # convert to tf.data.dataset
-    test_dataset = tf.data.Dataset.from_tensor_slices((feature_array, label_array))
+    test_dataset = tf.data.Dataset.from_tensor_slices(
+        (np.array(feature_array, dtype=np.float32), np.array(label_array, dtype=np.int32)))
     return test_dataset
 
 
@@ -85,9 +95,10 @@ def tflite_test(model_settings, audio_processor, tflite_path):
     # test_data = audio_processor.get_data(audio_processor.Modes.testing).batch(1)
 
     # test model with own feature
-    feat_dir = ""
+    feat_dir = "/data1/yw.shi/project/1.kws/deploy-cc/features"
     test_data = create_test_data(feat_dir)
-
+    test_data = test_data.batch(1)
+    print("test data: ", test_data)
     expected_indices = np.concatenate([y for x, y in test_data])
     predicted_indices = []
 
@@ -100,11 +111,26 @@ def tflite_test(model_settings, audio_processor, tflite_path):
     # t_start = time.time()
     for mfcc, label in tqdm(test_data):
         t_start = time.time()
-        print("mfcc", mfcc)
+        print("mfcc", mfcc.numpy())
+        """
+        t = mfcc.numpy()[0]
+        print("=====>", len(t))
+        with open("feat_" + str(label.numpy()[0]), 'w', encoding='utf-8') as f:
+            cnt = 0
+            for i, x in enumerate(t):
+                if(cnt == 39):
+                    f.write(str(t[i]) + " ")
+                    f.write("\n")
+                    cnt = 0
+                else:
+                    f.write(str(t[i]) + " ")
+                    cnt += 1
+        """
         prediction = tflite_inference(mfcc, interpreter, input_details, output_details)
         predicted_indices.append(np.squeeze(tf.argmax(prediction, axis=1)))
+        print(tf.argmax(prediction, axis=1))
         t_end = time.time()
-        print(f"Finish inference total samples{len(expected_indices)} cost time:{t_end - t_start}s")
+        print(f"Finish inference total samples {len(expected_indices)} cost time:{t_end - t_start}s")
     test_accuracy = calculate_accuracy(predicted_indices, expected_indices)
     confusion_matrix = tf.math.confusion_matrix(expected_indices, predicted_indices,
                                                 num_classes=model_settings['label_count'])
@@ -112,7 +138,7 @@ def tflite_test(model_settings, audio_processor, tflite_path):
     print(confusion_matrix.numpy())
     print(test_accuracy.numpy())
     print(f'Test accuracy = {test_accuracy.numpy() * 100:.2f}%'
-          f'(N={audio_processor._set_size["testing"]})')
+          f'(N={len(expected_indices)})')
 
 
 def tflite_inference(input_data, interpreter, input_details, output_details):
