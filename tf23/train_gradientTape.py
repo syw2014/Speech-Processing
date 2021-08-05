@@ -17,13 +17,11 @@ import models
 
 from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
-
 tf.compat.v1.enable_eager_execution()
 
+#parser = argparse.ArgumentParser()
 
-# parser = argparse.ArgumentParser()
-
-# FLAGS, _ = parser.parse_known_args()
+#FLAGS, _ = parser.parse_known_args()
 
 
 class KeywordSpotting(object):
@@ -72,7 +70,7 @@ class KeywordSpotting(object):
 
         # calculate epochs
         train_max_steps = np.sum(training_steps_list)
-        # self.epochs = int(np.ceil(train_max_steps / FLAGS.eval_step_interval))
+        #self.epochs = int(np.ceil(train_max_steps / FLAGS.eval_step_interval))
         self.epochs = 1
 
     def calcu_loss(self, y_pred, y_true):
@@ -136,9 +134,9 @@ class KeywordSpotting(object):
 
         # prepare datasets
         train_dataset = self.audio_processor.get_data(self.audio_processor.Modes.training,
-                                                      FLAGS.background_frequency,
-                                                      FLAGS.background_volume,
-                                                      int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
+                                                 FLAGS.background_frequency,
+                                                 FLAGS.background_volume,
+                                                 int((FLAGS.time_shift_ms * FLAGS.sample_rate) / 1000))
         buffer_size = self.audio_processor.get_set_size(self.audio_processor.Modes.training)
         print("train set set:", buffer_size)
         train_dataset = train_dataset.shuffle(buffer_size=buffer_size).repeat().batch(FLAGS.batch_size).prefetch(1)
@@ -160,13 +158,11 @@ class KeywordSpotting(object):
             for (step, (input_x, input_y)) in enumerate(train_dataset.take(steps_per_epoch)):
                 loss, preds = self.train_step(input_x, input_y)
                 train_acc.update_state(y_true=input_y, y_pred=preds)
-                print(
-                    f"Epoch {epoch}/{self.epochs} training loss:{loss:.2f} training accuracy:{train_acc.result().numpy():0.3f}")
+                print(f"Epoch {epoch}/{self.epochs} training loss:{loss:.2f} training accuracy:{train_acc.result().numpy():0.3f}")
             # evaluate
             eval_loss, eval_acc = self.evaluate(val_dataset)
-            print(
-                f"Epoch {epoch}/{self.epochs} train loss:{loss:.2f} training accuracy:{train_acc.result().numpy():0.3f}"
-                f" evaluation loss:{eval_loss:0.2f} eval_accuracy:{eval_acc.result().numpy():0.3f}")
+            print(f"Epoch {epoch}/{self.epochs} train loss:{loss:.2f} training accuracy:{train_acc.result().numpy():0.3f}"
+                  f" evaluation loss:{eval_loss:0.2f} eval_accuracy:{eval_acc.result().numpy():0.3f}")
             t = float(eval_acc.result().numpy())
             if best_acc < t:
                 best_acc = t
@@ -206,7 +202,7 @@ class KeywordSpotting(object):
 def main():
     kws_object = KeywordSpotting(enable_function=True)
     print("Start train...")
-    # kws_object.train()
+    #kws_object.train()
     print("start convert")
     kws_object.save_mlir()
 
@@ -311,5 +307,5 @@ if __name__ == "__main__":
     # train model
     kws_object = KeywordSpotting(enable_function=True)
     print("Start train...")
-    # kws_object.train()
+    #kws_object.train()
     kws_object.save_mlir()
