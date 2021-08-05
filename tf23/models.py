@@ -30,14 +30,14 @@ def prepare_model_settings(label_count,
     Returns:
         Dictionary containing common settings.
     """
-    desired_samples = int(sample_rate * clip_duration_ms / 1000)  # 期望sample个数, int(16000*1000/1000)
-    window_size_samples = int(sample_rate * window_size_ms / 1000)  # 单window内sample 个数,int(16000*30/1000)
-    window_stride_samples = int(sample_rate * window_stride_ms / 1000)  # window 滑动几个sample,int(16000*10/100)
+    desired_samples = int(sample_rate * clip_duration_ms / 1000)  # 期望sample个数,int(16000*1000/1000)=16000
+    window_size_samples = int(sample_rate * window_size_ms / 1000)  # 单window内sample 个数, int(16000*30/1000)=480
+    window_stride_samples = int(sample_rate * window_stride_ms / 1000)  # window 滑动几个sample,int(16000*10/100)=160
     length_minus_window = (desired_samples - window_size_samples)  # 期望和实际的差,(16000-480)=15520
     if length_minus_window < 0:
         spectrogram_length = 0
     else:
-        spectrogram_length = 1 + int(length_minus_window / window_stride_samples) # 15520/160+1=98
+        spectrogram_length = 1 + int(length_minus_window / window_stride_samples) # 98
     # feature dimension
     fingerprint_size = dct_coefficient_count * spectrogram_length
 
@@ -434,8 +434,8 @@ def create_att_crnn_model(model_settings, model_size_info, training=None):
     Returns:
          A tf.keras model with the requested architecture
     """
-    # input_frequency_size = model_setting["dct_coefficient_count"]
-    # input_time_size = model_setting["spectrogram_length"]
+    input_frequency_size = model_setting["dct_coefficient_count"]
+    input_time_size = model_setting["spectrogram_length"]
 
     # extract model parameters
     pass
