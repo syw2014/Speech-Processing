@@ -131,7 +131,7 @@ def train():
               verbose=1,
               epochs=train_max_epochs * 3)
 
-    print("Training model finished, start to test...")
+    print("Training model finshed, start to test...")
     # test and save model
     test_dataset = audio_processor.get_data(audio_processor.Modes.testing)
     test_dataset = test_dataset.batch(FLAGS.batch_size)
@@ -203,7 +203,7 @@ if __name__ == "__main__":
                         help="how many bins to use for the mfcc fingerprint")
     parser.add_argument("--how_many_train_steps",
                         type=str,
-                        default="10000,10000, 10000",
+                        default="5000,10000, 5000",
                         help="how many training loops to run")
     parser.add_argument("--eval_step_interval",
                         type=int,
