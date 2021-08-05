@@ -23,6 +23,7 @@ from tensorflow.python.platform import gfile
 
 import tensorflow_io as tfio
 import librosa
+import shutil
 
 tf.compat.v1.disable_eager_execution()
 # tf.compat.v1.enable_eager_execution()
@@ -348,6 +349,15 @@ class AudioProcessor(object):
             labels, paths = list(zip(*[d.values() for d in data_index[set_index]]))
             # convert label to label id
             labels = [word_to_index[w] for w in labels]
+            # store test data
+            """
+            if set_index == "testing":
+                tt = list(paths)
+                for i in range(len(tt)):
+                    dest = "/data1/yw.shi/project/1.kws/mfcc/kws/audios2/"
+                    name = tt[i].split("/")[-1] +"_"+str(labels[i])
+                    shutil.copy2(tt[i], os.path.join(dest, name))
+            """
             self._tf_datasets[set_index] = tf.data.Dataset.from_tensor_slices((list(paths), labels))
 
     def _prepare_background_data(self):
