@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:12:17
- * @LastEditTime: 2021-08-05 17:34:34
+ * @LastEditTime: 2021-08-06 11:42:34
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.h
@@ -66,6 +66,9 @@ struct Params {
     int filterbank_channel_count;
     // Defaults to `13`.How many output channels to produce per time slice.
     int dct_coefficient_count;
+
+    // Final feature length , default should be 98*40=3920
+    int feature_length;
 };
 
 // Wav feature(mfcc) extraction class
