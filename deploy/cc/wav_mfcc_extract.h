@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:12:17
- * @LastEditTime: 2021-08-05 16:14:42
+ * @LastEditTime: 2021-08-05 17:34:34
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.h
@@ -109,6 +109,10 @@ class FeatureExtract {
     size_t ProcessWavFileList(
         std::string wav_folder, std::string out_folder, bool write_to_file,
         std::vector<std::vector<std::vector<double>>> &mfcc_feature_list);
+
+    
+    // Audio data normlize to -1.0~1.0
+    size_t AudioDataNorm(std::vector<int16_t> &audio_data, std::vector<double>& norm_samples);
 
     void PrintParams();
 

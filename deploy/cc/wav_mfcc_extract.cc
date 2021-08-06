@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:13:53
- * @LastEditTime: 2021-08-05 16:20:26
+ * @LastEditTime: 2021-08-05 17:42:21
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.cc
@@ -247,6 +247,23 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
     return 0;
 }
 
+size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
+                                     std::vector<double> &norm_samples) {
+
+    // Convert data to -1.0~1.0
+    norm_samples.resize(params_.desired_samples);
+    int audio_data_size = audio_data.size();
+    for(int i=0; i < audio_data.size(); ++i) {
+        if(i >= audio_data_size) {
+            norm_samples[i] = 0.0; // padding for the specific sample length
+        } else {
+            norm_samples[i] = Int16SampleToFloat(audio_data[i]);
+        }
+    }
+
+    return 0;
+}
+
 /**
  * @description: Input audio samples and calculate spectrogram
  * @param {vector<double>} audio_samples, input audio samples
@@ -377,7 +394,7 @@ size_t FeatureExtract::ProcessWavFileList(
     struct dirent *ptr;
     std::vector<std::string> files;
     std::vector<std::string> outfiles;
-    
+
     // *NOTE*, wav file name format like 5338ca0367ec5ef0d43244cdae31dda7.wav_2
     if (!(pDir = opendir(wav_folder.c_str()))) {
         perror(("Folder " + wav_folder + "doesn't exist!").c_str());
