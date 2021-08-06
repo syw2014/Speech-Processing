@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:13:53
- * @LastEditTime: 2021-08-05 17:42:21
+ * @LastEditTime: 2021-08-06 11:48:16
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.cc
@@ -41,6 +41,11 @@ size_t FeatureExtract::Initialize(const Params &params) {
         int(params_.sample_rate * params_.window_stride_ms / 1000); // 160
     params_.desired_samples =
         int(params_.sample_rate * params_.clip_duration_ms / 1000); // 16000
+    int length_minus_window =
+        (params_.desired_samples - params_.window_size_samples);
+    params_.feature_length =
+        params_.dct_coefficient_count *
+        (1 + int(length_minus_window / params_.window_stride_samples)); // 40*(97+1)=3920
 
     // Print parameters for debug
     PrintParams();
@@ -125,6 +130,13 @@ size_t FeatureExtract::CheckParams() {
         return 1;
     }
 
+    // feature length
+    if (params_.feature_length != 3920) {
+        std::cout << "feature_length was not `3920` is different with it "
+                     "when training model!\n";
+        return 1;
+    }    
+
     return 0;
 }
 
@@ -143,6 +155,7 @@ void FeatureExtract::PrintParams() {
               << "HZ\n\tfilterbank_channel_count: "
               << params_.filterbank_channel_count
               << "\n\tdct_coefficient_count: " << params_.dct_coefficient_count
+              << "\n\tfeature_length: " << params_.feature_length
               << std::endl;
 }
 
@@ -253,8 +266,8 @@ size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
     // Convert data to -1.0~1.0
     norm_samples.resize(params_.desired_samples);
     int audio_data_size = audio_data.size();
-    for(int i=0; i < audio_data.size(); ++i) {
-        if(i >= audio_data_size) {
+    for (int i = 0; i < audio_data.size(); ++i) {
+        if (i >= audio_data_size) {
             norm_samples[i] = 0.0; // padding for the specific sample length
         } else {
             norm_samples[i] = Int16SampleToFloat(audio_data[i]);
