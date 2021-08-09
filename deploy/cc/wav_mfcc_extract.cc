@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:13:53
- * @LastEditTime: 2021-08-09 11:43:43
+ * @LastEditTime: 2021-08-09 15:07:26
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.cc
@@ -431,7 +431,8 @@ size_t FeatureExtract::ProcessSingleWav(
 
 // Calculate mfcc features for given wav folder
 size_t FeatureExtract::ProcessWavFileList(
-    std::string wav_folder, std::string out_folder, bool write_to_file,
+    std::string wav_folder, std::string out_folder,
+    std::vector<std::string> &filenames, bool write_to_file,
     std::vector<std::vector<std::vector<double>>> &mfcc_feature_list) {
 
     DIR *pDir;
@@ -459,6 +460,7 @@ size_t FeatureExtract::ProcessWavFileList(
 
             // 5338ca0367ec5ef0d43244cdae31dda7.wav_2
             files.push_back(wav_folder + "/" + ptr->d_name);
+            filenames.push_back(ptr->d_name);
             // mfcc.5338ca0367ec5ef0d43244cdae31dda7.wav_2
             outfiles.push_back(out_folder + "/" + "mfcc." + ptr->d_name);
         }
@@ -472,4 +474,17 @@ size_t FeatureExtract::ProcessWavFileList(
     }
 
     return 0;
+}
+
+// Mfcc feature flat
+void FeatureExtract::MfccFlat(std::vector<std::vector<double>> &mfcc_feature,
+                              std::vector<float> &feature) {
+    int feat_size = mfcc_feature.size() * mfcc_feature[0].size();
+    feature.resize(feat_size);
+    for (int i = 0; i < mfcc_feature.size(); ++i) {
+        for (int j = 0; j < mfcc_feature[i].size(); ++j) {
+            int index = i * mfcc_feature[i].size() + j;
+            feature[index] = mfcc_feature[i][j];
+        }
+    }
 }

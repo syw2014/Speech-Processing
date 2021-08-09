@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:12:17
- * @LastEditTime: 2021-08-09 11:41:28
+ * @LastEditTime: 2021-08-09 15:07:13
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.h
@@ -48,7 +48,8 @@ inline int16_t FloatToInt16Sample(float data) {
 struct Params {
     //   public:
     // int clip_duration_ms; // default 1000ms,
-    //                       // how long time you want to process audio, this must
+    //                       // how long time you want to process audio, this
+    //                       must
     //                       // be the same as it in training process
     // int desired_samples;  // how many samples want to process
     // int sample_rate;      // sample rate,default=16000, only support 16khz
@@ -61,7 +62,8 @@ struct Params {
     // // Defaults to `20`.The lowest frequency to use when calculating the
     // // ceptstrum.
     // int lower_frequency_limit; // 20hz
-    // // 4000hz, Defaults to `4000` The highest frequency to use when calculating
+    // // 4000hz, Defaults to `4000` The highest frequency to use when
+    // calculating
     // // the ceptstrum
     // int upper_frequency_limit;
     // // Defaults to `40`.Resolution of the Mel bank used internally.
@@ -73,31 +75,30 @@ struct Params {
     // int feature_length;
 
     // Paramter maps, name and values
-    /* clip_duration_ms: default 1000ms,how long time you want to process audio, this must be the same as it in training process
-     * desired_samples: how many samples want to process
-     * sample_rate: 16000 HZ
-     * window_size_ms: default 30ms, keep the same as model train
-     * window_size_samples: 480
+    /* clip_duration_ms: default 1000ms,how long time you want to process audio,
+     * this must be the same as it in training process desired_samples: how many
+     * samples want to process sample_rate: 16000 HZ window_size_ms: default
+     * 30ms, keep the same as model train window_size_samples: 480
      * window_stride_ms: 10ms
      * window_stride_samples: 160
      * lower_frequency_limit: 20HZ
      * upper_frequency_limit: 4000HZ
      * filterbank_channel_count: 40
-     * dct_coefficient_count: 40 
+     * dct_coefficient_count: 40
      * feature_length: 98*40=3920
-    */
+     */
     std::unordered_map<std::string, int> paramters = {
-        {"clip_duration_ms", 1000},      // default 1000ms   
+        {"clip_duration_ms", 1000}, // default 1000ms
         {"desired_samples", -1},
-        {"sample_rate", 16000},           
+        {"sample_rate", 16000},
         {"window_size_ms", 30},
-        {"window_size_samples", -1},   
+        {"window_size_samples", -1},
         {"window_stride_ms", 10},
-        {"window_stride_samples", -1}, 
+        {"window_stride_samples", -1},
         {"lower_frequency_limit", 20},
-        {"upper_frequency_limit", 4000}, 
+        {"upper_frequency_limit", 4000},
         {"filterbank_channel_count", 40},
-        {"dct_coefficient_count", 40}, 
+        {"dct_coefficient_count", 40},
         {"feature_length", -1}};
 };
 
@@ -141,12 +142,16 @@ class FeatureExtract {
 
     // Calculate mfcc features for given wav folder
     size_t ProcessWavFileList(
-        std::string wav_folder, std::string out_folder, bool write_to_file,
+        std::string wav_folder, std::string out_folder,
+        std::vector<std::string> &filenames, bool write_to_file,
         std::vector<std::vector<std::vector<double>>> &mfcc_feature_list);
 
     // Audio data normlize to -1.0~1.0
     size_t AudioDataNorm(std::vector<int16_t> &audio_data,
                          std::vector<double> &norm_samples);
+
+    void MfccFlat(std::vector<std::vector<double>> &mfcc_feature,
+                  std::vector<float> &feature);
 
     void PrintParams();
 
