@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:14:40
- * @LastEditTime: 2021-08-06 11:54:12
+ * @LastEditTime: 2021-08-09 14:05:39
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\kws.cc
@@ -106,10 +106,12 @@ size_t KWS::GetInputTensorByName(const char *name) {
 // Model inference
 size_t KWS::Inference(const std::vector<float> &features, const int &feature_length,
                  std::vector<std::pair<int, float>> &logits) {
+    // Copy data from vector to tensor
 	TfLiteTensorCopyFromBuffer(input_tensor_, features.data(), feature_length * sizeof(float));
 	TfLiteInterpreterInvoke(interpreter_);
 	float prediction[label_num_];
     logits.resize(label_num_);
+    // Copy data from tensor to buffer
 	TfLiteTensorCopyToBuffer(output_tensor_, prediction, label_num_ * sizeof(float));
     for(int i = 0; i < label_num_; ++i) {
         logits.push_back(std::make_pair(i, prediction[i]));
@@ -144,7 +146,13 @@ size_t KWS::GetFeatures(std::vector<int16_t> &audio_data,
 
     // Check feature dimension and Flat feature as 1-dimension vector
     size_t feat_size = mfcc_features.size() * mfcc_features[0].size();
-    // if(feat_size != feature_extractor)
+    std::string feat_name = "feature_length";
+    int value;
+    ret = feature_extractor_.GetParameters(feat_name, value);
+    if(feat_size != value) {
+        std::cout << "[ERROR]: feature dimension: " << feat_size << "was not the same as setting: "
+                << value << std::endl;
+    }
 
     // Flat 2-D feature(vector<vector<double>>) as 1-D feature(vector<float>)
     features.resize(feat_size); 
@@ -159,7 +167,7 @@ size_t KWS::GetFeatures(std::vector<int16_t> &audio_data,
 
 // Get keywords
 size_t KWS::ParseLogits(std::vector<std::pair<int, float>> &logits, std::string &keyword,
-                   int &label_id) {
+                   int &label_id, float &score) {
     // Check empty results
     int logit_size = logits.size();
     if (logit_size == 0 && logit_size != label_num_) {
@@ -175,7 +183,44 @@ size_t KWS::ParseLogits(std::vector<std::pair<int, float>> &logits, std::string 
         }
         std::cout << "Prediction label: " << logits[i].first << "\t score: " << logits[i].second << std::endl;
     }
+
+    // Get the keywords
+    if(max_label_id != -1 && labelId_to_keyword_.find(max_label_id) != labelId_to_keyword_.end()) {
+        keyword = labelId_to_keyword_[max_label_id];
+        label_id = max_label_id;
+        score = max_score;
+    } else {
+        keyword = "";
+        label_id = -1;
+        score = 0.0;
+    }
+    return 0;
 }
 
 // Check result is keyword
-size_t IsAwakened(std::vector<double> &audio_samples);
+// This is main entrance of application, input audio data, return the wake or not
+bool KWS::IsAwakened(std::vector<int16_t> &audio_samples,std::string &keyword, float &score, float threshold) {
+    
+    // Step1, audio data convert to features
+    std::vector<float> features;
+    GetFeatures(audio_samples, features);
+
+    // Step2, predict
+    std::vector<std::pair<int, float>> logits;
+    Inference(features, features.size(), logits);
+
+    // Step3, result parse
+    std::string keyword;
+    int label_id;
+    float score;
+    ParseLogits(logits, keyword, label_id, score);
+
+    // Step4, check weather wake or not
+    bool ret = false;
+    if (score >= threshold) {
+        std::cout << "Bot was wake, keyword: " << keyword << " score: " << score << std::endl;
+        ret = true;
+    }
+
+    return ret;
+}

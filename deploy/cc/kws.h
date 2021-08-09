@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 16:29:27
- * @LastEditTime: 2021-08-06 11:34:57
+ * @LastEditTime: 2021-08-09 13:56:54
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\kws.h
@@ -38,10 +38,10 @@ class KWS {
     size_t GetFeatures(std::vector<int16_t>& audio_data, std::vector<float>& features);
 
     // Get keywords
-    size_t ParseLogits(std::vector<std::pair<int, float>>& logits, std::string &keyword, int &label_id);
+    size_t ParseLogits(std::vector<std::pair<int, float>>& logits, std::string &keyword, int &label_id, float &score);
 
     // Check result is keyword
-    size_t IsAwakened(std::vector<double>& audio_samples);
+    bool IsAwakened(std::vector<int16_t>& audio_samples, std::string &keyword, float &score, float threshold=0.85);
 
   private:
     FeatureExtract feature_extractor_;       // mfcc feature extractor
