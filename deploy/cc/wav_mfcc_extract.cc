@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:13:53
- * @LastEditTime: 2021-08-06 11:48:16
+ * @LastEditTime: 2021-08-09 11:43:43
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.cc
@@ -35,24 +35,28 @@ size_t FeatureExtract::Initialize(const Params &params) {
     }
 
     // calcuate some paramters
-    params_.window_size_samples =
-        int(params_.sample_rate * params_.window_size_ms / 1000); // 480
-    params_.window_stride_samples =
-        int(params_.sample_rate * params_.window_stride_ms / 1000); // 160
-    params_.desired_samples =
-        int(params_.sample_rate * params_.clip_duration_ms / 1000); // 16000
-    int length_minus_window =
-        (params_.desired_samples - params_.window_size_samples);
-    params_.feature_length =
-        params_.dct_coefficient_count *
-        (1 + int(length_minus_window / params_.window_stride_samples)); // 40*(97+1)=3920
+    params_.paramters["window_size_samples"] =
+        int(params_.paramters["sample_rate"] *
+            params_.paramters["window_size_ms"] / 1000); // 480
+    params_.paramters["window_stride_samples"] =
+        int(params_.paramters["sample_rate"] *
+            params_.paramters["window_stride_ms"] / 1000); // 160
+    params_.paramters["desired_samples"] =
+        int(params_.paramters["sample_rate"] *
+            params_.paramters["clip_duration_ms"] / 1000); // 16000
+    int length_minus_window = (params_.paramters["desired_samples"] -
+                               params_.paramters["window_size_samples"]);
+    params_.paramters["feature_length"] =
+        params_.paramters["dct_coefficient_count"] *
+        (1 + int(length_minus_window /
+                 params_.paramters["window_stride_samples"])); // 40*(97+1)=3920
 
     // Print parameters for debug
     PrintParams();
 
     // Spectorgram instance initialize
-    bool flag = sgram_.Initialize(params_.window_size_samples,
-                                  params_.window_stride_samples);
+    bool flag = sgram_.Initialize(params_.paramters["window_size_samples"],
+                                  params_.paramters["window_stride_samples"]);
     if (!flag) {
         std::cout << "Spectrogram initialize failed!";
         // TODO , error code
@@ -60,10 +64,11 @@ size_t FeatureExtract::Initialize(const Params &params) {
     }
 
     // Mfcc initialize
-    mfcc_.set_upper_frequency_limit(params_.upper_frequency_limit);
-    mfcc_.set_lower_frequency_limit(params_.lower_frequency_limit);
-    mfcc_.set_filterbank_channel_count(params_.filterbank_channel_count);
-    mfcc_.set_dct_coefficient_count(params_.dct_coefficient_count);
+    mfcc_.set_upper_frequency_limit(params_.paramters["upper_frequency_limit"]);
+    mfcc_.set_lower_frequency_limit(params_.paramters["lower_frequency_limit"]);
+    mfcc_.set_filterbank_channel_count(
+        params_.paramters["filterbank_channel_count"]);
+    mfcc_.set_dct_coefficient_count(params_.paramters["dct_coefficient_count"]);
 
     return 0;
 }
@@ -75,87 +80,92 @@ size_t FeatureExtract::Initialize(const Params &params) {
  */
 size_t FeatureExtract::CheckParams() {
     // Sampling rate
-    if (params_.sample_rate != 16000) {
+    if (params_.paramters["sample_rate"] != 16000) {
         std::cout << "Setting audio sampling rate was not 16000!\n";
         // TODO, error code
         return 1;
     }
 
     // window size
-    if (params_.window_size_ms != 30) {
+    if (params_.paramters["window_size_ms"] != 30) {
         std::cout << "window_size_ms was not <30ms> is different with it when "
                      "training model";
         return 1;
     }
 
     // window stride
-    if (params_.window_stride_ms != 10) {
+    if (params_.paramters["window_stride_ms"] != 10) {
         std::cout << "window_stride_ms was not<10>ms is different with it when "
                      "training model!\n";
         return 1;
     }
 
     // audio clip
-    if (params_.clip_duration_ms != 1000) {
+    if (params_.paramters["clip_duration_ms"] != 1000) {
         std::cout << "clip_duration_ms was not<1000>ms is different with it "
                      "when training model!\n";
         return 1;
     }
 
     // upper_frequency_limit
-    if (params_.upper_frequency_limit != 4000) {
+    if (params_.paramters["upper_frequency_limit"] != 4000) {
         std::cout << "upper_frequency_limit was not `4000`HZ is different with "
                      "it when training model!\n";
         return 1;
     }
 
     // lower_frequency_limit
-    if (params_.lower_frequency_limit != 20) {
+    if (params_.paramters["lower_frequency_limit"] != 20) {
         std::cout << "lower_frequency_limit was not `20`HZ is different with "
                      "it when training model!\n";
         return 1;
     }
 
     // filterbank_channel_count
-    if (params_.filterbank_channel_count != 40) {
+    if (params_.paramters["filterbank_channel_count"] != 40) {
         std::cout << "lower_frequency_limit was not `40` is different with it "
                      "when training model!\n";
         return 1;
     }
 
     // dct_coefficient_count
-    if (params_.dct_coefficient_count != 40) {
+    if (params_.paramters["dct_coefficient_count"] != 40) {
         std::cout << "dct_coefficient_count was not `40` is different with it "
                      "when training model!\n";
         return 1;
     }
 
     // feature length
-    if (params_.feature_length != 3920) {
+    if (params_.paramters["feature_length"] != 3920) {
         std::cout << "feature_length was not `3920` is different with it "
                      "when training model!\n";
         return 1;
-    }    
+    }
 
     return 0;
 }
 
 void FeatureExtract::PrintParams() {
-    std::cout << "\n\tclip_duration_ms: " << params_.clip_duration_ms
-              << "ms\n\tsample_rate:" << params_.sample_rate
-              << "\n\tdesired_samples:" << params_.desired_samples
-              << "\n\twindow_size_ms: " << params_.window_size_ms
-              << "ms\n\twindow_size_samples" << params_.window_size_samples
-              << "\n\twindow_stride_ms: " << params_.window_stride_ms
+    std::cout << "\n\tclip_duration_ms: "
+              << params_.paramters["clip_duration_ms"]
+              << "ms\n\tsample_rate:" << params_.paramters["sample_rate"]
+              << "\n\tdesired_samples:" << params_.paramters["desired_samples"]
+              << "\n\twindow_size_ms: " << params_.paramters["window_size_ms"]
+              << "ms\n\twindow_size_samples"
+              << params_.paramters["window_size_samples"]
+              << "\n\twindow_stride_ms: "
+              << params_.paramters["window_stride_ms"]
               << "ms\n\twindow_stride_samples: "
-              << params_.window_stride_samples
-              << "\n\tlower_frequency_limit: " << params_.lower_frequency_limit
+              << params_.paramters["window_stride_samples"]
+              << "\n\tlower_frequency_limit: "
+              << params_.paramters["lower_frequency_limit"]
               << "HZ\n\tupper_frequency_limit: "
-              << params_.upper_frequency_limit
+              << params_.paramters["upper_frequency_limit"]
               << "HZ\n\tfilterbank_channel_count: "
-              << params_.filterbank_channel_count
-              << "\n\tdct_coefficient_count: " << params_.dct_coefficient_count
-              << "\n\tfeature_length: " << params_.feature_length
+              << params_.paramters["filterbank_channel_count"]
+              << "\n\tdct_coefficient_count: "
+              << params_.paramters["dct_coefficient_count"]
+              << "\n\tfeature_length: " << params_.paramters["feature_length"]
               << std::endl;
 }
 
@@ -246,10 +256,10 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
     // int clip_duration_ms = 1000; // only 1000ms
     // int desired_samples = int(decoded_sample_rate * clip_duration_ms / 1000);
     // data.resize(float_values.size());
-    data.resize(params_.desired_samples);
-    std::cout << "Choose process samples size was: " << params_.desired_samples
-              << std::endl;
-    for (int i = 0; i < params_.desired_samples; ++i) {
+    data.resize(params_.paramters["desired_samples"]);
+    std::cout << "Choose process samples size was: "
+              << params_.paramters["desired_samples"] << std::endl;
+    for (int i = 0; i < params_.paramters["desired_samples"]; ++i) {
         if (i >= float_values.size()) {
             data[i] = 0.0; // padding for short audio
         } else {
@@ -264,7 +274,7 @@ size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
                                      std::vector<double> &norm_samples) {
 
     // Convert data to -1.0~1.0
-    norm_samples.resize(params_.desired_samples);
+    norm_samples.resize(params_.paramters["desired_samples"]);
     int audio_data_size = audio_data.size();
     for (int i = 0; i < audio_data.size(); ++i) {
         if (i >= audio_data_size) {
@@ -307,7 +317,7 @@ size_t FeatureExtract::SpectrogramToMfcc(
     std::vector<std::vector<double>> &spectrogram_output,
     std::vector<std::vector<double>> &mfcc_features) {
     int spectrogram_channels = spectrogram_output[0].size();
-    mfcc_.Initialize(spectrogram_channels, params_.sample_rate);
+    mfcc_.Initialize(spectrogram_channels, params_.paramters["sample_rate"]);
     for (int i = 0; i < spectrogram_output.size(); ++i) {
         std::vector<double> mfcc_out;
         mfcc_.Compute(spectrogram_output[i], &mfcc_out);
@@ -345,10 +355,31 @@ size_t FeatureExtract::ExtractFeatures(
 }
 
 // Setting parameters
-// int SetParameters(const Params &params);
+size_t FeatureExtract::SetParameters(const std::string &param_name,
+                                     int &value) {
+    // Check parameter name exist or not
+    if (params_.paramters.find(param_name) == params_.paramters.end()) {
+        std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
+        return 1;
+    }
+
+    // Set paramters
+    params_.paramters[param_name] = value;
+    return 0;
+}
 
 // Get parameters
-// Params GetParameters();
+size_t FeatureExtract::GetParameters(const std::string &param_name,
+                                     int &value) {
+    // Check parameter name exist or not
+    if (params_.paramters.find(param_name) == params_.paramters.end()) {
+        std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
+        return 1;
+    }
+
+    // Set paramters
+    value = params_.paramters[param_name];
+}
 
 // Calculate mfcc features for a wav file, can be write features to file
 size_t FeatureExtract::ProcessSingleWav(
