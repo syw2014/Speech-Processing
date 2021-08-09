@@ -1,12 +1,21 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 10:14:40
- * @LastEditTime: 2021-08-09 14:05:39
+ * @LastEditTime: 2021-08-09 15:19:41
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\kws.cc
  */
 #include "kws.h"
+
+template <typename T>
+std::string ToString(T Num)
+{
+    std::ostringstream oss;
+    oss<<Num;
+    std::string str(oss.str());
+    return str;
+}
 
 // Construct
 KWS::KWS() {}
@@ -159,7 +168,8 @@ size_t KWS::GetFeatures(std::vector<int16_t> &audio_data,
     for(int i; i < mfcc_features.size(); ++i) {
         for(int j=0; j < mfcc_features[i].size(); ++j) {
             // TODO, here convert double to float which used in tflite inference
-            features[i] = mfcc_features[i][j];
+            int index = i*mfcc_features[i].size() + j;
+            features[index] = mfcc_features[i][j];
         }
     }
     return ret;
@@ -199,7 +209,7 @@ size_t KWS::ParseLogits(std::vector<std::pair<int, float>> &logits, std::string 
 
 // Check result is keyword
 // This is main entrance of application, input audio data, return the wake or not
-bool KWS::IsAwakened(std::vector<int16_t> &audio_samples,std::string &keyword, float &score, float threshold) {
+bool KWS::IsAwakenedWithAudio(std::vector<int16_t> &audio_samples,std::string &keyword, float &score, float threshold) {
     
     // Step1, audio data convert to features
     std::vector<float> features;
@@ -223,4 +233,88 @@ bool KWS::IsAwakened(std::vector<int16_t> &audio_samples,std::string &keyword, f
     }
 
     return ret;
+}
+
+// Check result is keyword
+// This is main entrance of application, input audio data, return the wake or not
+bool KWS::IsAwakenedWithFeature(std::vector<float>& features,std::string &keyword, float &score, float threshold) {
+    
+    // Step1, predict
+    std::vector<std::pair<int, float>> logits;
+    Inference(features, features.size(), logits);
+
+    // Step3, result parse
+    std::string keyword;
+    int label_id;
+    float score;
+    ParseLogits(logits, keyword, label_id, score);
+
+    // Step4, check weather wake or not
+    bool ret = false;
+    if (score >= threshold) {
+        std::cout << "Bot was wake, keyword: " << keyword << " score: " << score << std::endl;
+        ret = true;
+    }
+
+    return ret;
+}
+
+// Process wav file
+size_t KWS::ProcessWavFile(std::string& wav_file, std::string &keyword, float &score, bool is_wake) {
+    // Load wav file
+    std::string outfile = "";
+    bool write_to_file = false;
+    std::vector<std::vector<double>> mfcc_features;
+    feature_extractor_.ProcessSingleWav(wav_file, outfile, false, mfcc_features);
+
+    // mfcc feature flat
+    std::vector<float> feature;
+    feature_extractor_.MfccFlat(mfcc_features, feature);
+
+    // predict
+    is_wake = IsAwakenedWithFeature(feature, keyword, score, 0.85);
+    std::cout <<"Process file: " << wav_file << " is_wake: " << is_wake <<
+        " keyword: " << keyword << " score: " << score << std::endl;
+
+    return 0;
+}
+
+// Process wav file list
+size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results) {
+    
+    std::string out_folder = "";
+    bool write_to_file = false;
+    std::vector<std::vector<std::vector<double>>> mfcc_feature_list;
+    std::vector<std::string> filenames;
+    // TODO, write 
+    // extract wav mfcc feature list
+    feature_extractor_.ProcessWavFileList(wav_dir, out_folder, filenames,write_to_file, mfcc_feature_list);
+    
+    // predict
+    std::vector<float> feature;
+    // store final result, order was: is_wake, keyword, score
+    std::vector<std::string> prediction; 
+    prediction.resize(4);
+    bool is_wake = false;
+    std::string keyword = "";
+    float score = 0.0;
+    std::string temp="";
+    for(int i = 0; i< mfcc_feature_list.size(); ++i) {
+        feature.clear();
+        prediction.clear();
+        feature_extractor_.MfccFlat(mfcc_feature_list[i], feature);
+
+        // predict
+        is_wake = IsAwakenedWithFeature(feature, keyword, score, 0.85);
+
+        // Assembly results
+        prediction.push_back(filenames[i]); // file name
+        prediction.push_back(ToString(is_wake));    // is_wake
+        prediction.push_back(keyword);  // keyword
+        prediction.push_back(ToString(score));  // score
+
+        results.push_back(prediction);
+    }
+
+    return 0;
 }

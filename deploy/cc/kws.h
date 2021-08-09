@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-08-05 16:29:27
- * @LastEditTime: 2021-08-09 13:56:54
+ * @LastEditTime: 2021-08-09 14:29:25
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\kws.h
@@ -15,6 +15,14 @@
 
 #include "c_api.h"
 #include "wav_mfcc_extract.h"
+
+// Type to make wav file name and keyword as a pair
+typedef std::pair<std::string, std::string> NameKeywordT;
+// Type to make score and whether wake or not as a pair
+typedef std::pair<float, bool> ScoreWakeT;
+// final result of wav file
+typedef std::pair<NameKeywordT, ScoreWakeT> KWSResultT;
+
 
 class KWS {
   public:
@@ -41,7 +49,16 @@ class KWS {
     size_t ParseLogits(std::vector<std::pair<int, float>>& logits, std::string &keyword, int &label_id, float &score);
 
     // Check result is keyword
-    bool IsAwakened(std::vector<int16_t>& audio_samples, std::string &keyword, float &score, float threshold=0.85);
+    bool IsAwakenedWithAudio(std::vector<int16_t>& audio_samples, std::string &keyword, float &score, float threshold=0.85);
+
+    // Check result is keyword with another
+  bool IsAwakenedWithFeature(std::vector<float>& features, std::string &keyword, float &score, float threshold=0.85);
+
+    // Process single wav file
+    size_t ProcessWavFile(std::string& wav_file, std::string &keyword, float &score, bool is_wake);
+
+    // Process wav file list
+    size_t ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results);
 
   private:
     FeatureExtract feature_extractor_;       // mfcc feature extractor
