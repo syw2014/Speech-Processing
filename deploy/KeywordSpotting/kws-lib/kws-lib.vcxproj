@@ -72,12 +72,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\includes;$(IncludePath)</IncludePath>
     <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\libs;$(LibraryPath)</LibraryPath>
-    <OutDir>.\result</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\includes;$(IncludePath)</IncludePath>
     <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\libs;$(LibraryPath)</LibraryPath>
-    <OutDir>.\result</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\includes;$(IncludePath)</IncludePath>
