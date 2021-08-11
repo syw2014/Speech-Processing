@@ -6,6 +6,7 @@
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\kws.cc
  */
+#include "stdafx.h"
 #include "kws.h"
 
 template <typename T>
@@ -48,7 +49,7 @@ size_t KWS::ModelInitialize(std::string &model_path, Params &params,
     labelId_to_keyword_[2] = "nihaoxiaoshun";
     labelId_to_keyword_[3] = "xiaoshunxiaoshun";
 
-    // label count,default 3
+    // label count,default 4, there are only two keywords
     label_num_ = labelId_to_keyword_.size();
 
     // Golden keywords to check wheather audio was keyword
@@ -118,7 +119,8 @@ size_t KWS::Inference(const std::vector<float> &features, const int &feature_len
     // Copy data from vector to tensor
 	TfLiteTensorCopyFromBuffer(input_tensor_, features.data(), feature_length * sizeof(float));
 	TfLiteInterpreterInvoke(interpreter_);
-	float prediction[label_num_];
+	// TODO, here 4 is the number of label, so you should know the right number before inference
+	float prediction[4];
     logits.resize(label_num_);
     // Copy data from tensor to buffer
 	TfLiteTensorCopyToBuffer(output_tensor_, prediction, label_num_ * sizeof(float));
@@ -165,7 +167,7 @@ size_t KWS::GetFeatures(std::vector<int16_t> &audio_data,
 
     // Flat 2-D feature(vector<vector<double>>) as 1-D feature(vector<float>)
     features.resize(feat_size); 
-    for(int i; i < mfcc_features.size(); ++i) {
+    for(int i=0; i < mfcc_features.size(); ++i) {
         for(int j=0; j < mfcc_features[i].size(); ++j) {
             // TODO, here convert double to float which used in tflite inference
             int index = i*mfcc_features[i].size() + j;
@@ -220,9 +222,9 @@ bool KWS::IsAwakenedWithAudio(std::vector<int16_t> &audio_samples,std::string &k
     Inference(features, features.size(), logits);
 
     // Step3, result parse
-    std::string keyword;
+    //std::string keyword;
     int label_id;
-    float score;
+    //float score;
     ParseLogits(logits, keyword, label_id, score);
 
     // Step4, check weather wake or not
@@ -244,9 +246,9 @@ bool KWS::IsAwakenedWithFeature(std::vector<float>& features,std::string &keywor
     Inference(features, features.size(), logits);
 
     // Step3, result parse
-    std::string keyword;
+    //std::string keyword;
     int label_id;
-    float score;
+    //float score;
     ParseLogits(logits, keyword, label_id, score);
 
     // Step4, check weather wake or not
