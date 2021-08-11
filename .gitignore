@@ -111,4 +111,12 @@ deploy/KeywordSpotting/*.vspx
 deploy/KeywordSpotting/*.sap
 
 
+deploy/KeywordSpotting/kws-win-demo/x64/
+deploy/KeywordSpotting/kws-win-demo/x86/
+deploy/KeywordSpotting/kws-lib/*.user
+deploy/KeywordSpotting/kws-lib/ReadMe.txt
+deploy/KeywordSpotting/kws-lib/Release
+deploy/KeywordSpotting/kws-lib/x64
+deploy/KeywordSpotting/kws-lib/result
+
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio
