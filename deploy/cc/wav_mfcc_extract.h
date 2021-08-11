@@ -15,7 +15,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-#include <dirent.h>
+// Note: In linux system it will include the system dirent.h, but in windows it will include the dirent.h in current project
+// ref: git@github.com:tronkko/dirent.git
+#include <dirent.h>	
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -25,7 +27,7 @@
 
 #include "mfcc.h"
 #include "spectrogram.h"
-#include "wavHeader.h"
+//#include "wav_header.h"
 
 static const int16_t kint16min = static_cast<int16_t>(~0x7FFF);
 static const int16_t kint16max = static_cast<int16_t>(0x7FFF);
@@ -43,6 +45,10 @@ inline int16_t FloatToInt16Sample(float data) {
     return std::min<float>(
         std::max<float>(roundf(data * kMultiplier), kint16min), kint16max);
 }
+
+
+
+
 
 // Define a struct to hold all parameters that used in features extraction
 struct Params {
@@ -159,6 +165,7 @@ class FeatureExtract {
 
   private:
     Params params_; // Paramters pointer
+	//WAVHeader hdr;	// file header
 
     Spectrogram sgram_; // Spectrogram instance
     Mfcc mfcc_;         // mfcc instance
