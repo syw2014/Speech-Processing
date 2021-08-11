@@ -10,3 +10,105 @@ deploy/cc/*.exe
 deploy/cc/*.o
 deploy/cc/*.mfcc
 deploy/cc/*.wav
+
+
+#ignore for visual studio 2015 solution
+# User-specific files
+deploy/KeywordSpotting/*.rsuser
+deploy/KeywordSpotting/*.suo
+deploy/KeywordSpotting/*.user
+deploy/KeywordSpotting/*.userosscache
+deploy/KeywordSpotting/*.sln.docstates
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
+# Mono auto generated files
+deploy/KeywordSpotting/mono_crash.*
+
+# Build results
+deploy/KeywordSpotting/[Dd]ebug/
+deploy/KeywordSpotting/[Dd]ebugPublic/
+deploy/KeywordSpotting/[Rr]elease/
+deploy/KeywordSpotting/[Rr]eleases/
+deploy/KeywordSpotting/x64/
+deploy/KeywordSpotting/x86/
+deploy/KeywordSpotting/[Ww][Ii][Nn]32/
+deploy/KeywordSpotting/[Aa][Rr][Mm]/
+deploy/KeywordSpotting/[Aa][Rr][Mm]64/
+deploy/KeywordSpotting/bld/
+deploy/KeywordSpotting/[Bb]in/
+deploy/KeywordSpotting/[Oo]bj/
+deploy/KeywordSpotting/[Ll]og/
+deploy/KeywordSpotting/[Ll]ogs/
+
+# Visual Studio 2015/2017 cache/options directory
+deploy/KeywordSpotting/.vs/
+# Uncomment if you have tasks that create the project's static files in wwwroot
+#wwwroot/
+
+# Visual Studio 2017 auto generated files
+deploy/KeywordSpotting/Generated\ Files/
+
+# MSTest test Results
+deploy/KeywordSpotting/[Tt]est[Rr]esult*/
+deploy/KeywordSpotting/[Bb]uild[Ll]og.*
+
+# NUnit
+deploy/KeywordSpotting/*.VisualState.xml
+deploy/KeywordSpotting/TestResult.xml
+deploy/KeywordSpotting/nunit-*.xml
+
+
+# Files built by Visual Studio
+deploy/KeywordSpotting/*_i.c
+deploy/KeywordSpotting/*_p.c
+deploy/KeywordSpotting/*_h.h
+deploy/KeywordSpotting/*.ilk
+deploy/KeywordSpotting/*.meta
+deploy/KeywordSpotting/*.obj
+deploy/KeywordSpotting/*.iobj
+deploy/KeywordSpotting/*.pch
+deploy/KeywordSpotting/*.pdb
+deploy/KeywordSpotting/*.ipdb
+deploy/KeywordSpotting/*.pgc
+deploy/KeywordSpotting/*.pgd
+deploy/KeywordSpotting/*.rsp
+deploy/KeywordSpotting/*.sbr
+deploy/KeywordSpotting/*.tlb
+deploy/KeywordSpotting/*.tli
+deploy/KeywordSpotting/*.tlh
+deploy/KeywordSpotting/*.tmp
+deploy/KeywordSpotting/*.tmp_proj
+deploy/KeywordSpotting/*_wpftmp.csproj
+deploy/KeywordSpotting/*.log
+deploy/KeywordSpotting/*.tlog
+deploy/KeywordSpotting/*.vspscc
+deploy/KeywordSpotting/*.vssscc
+deploy/KeywordSpotting/.builds
+deploy/KeywordSpotting/*.pidb
+deploy/KeywordSpotting/*.svclog
+deploy/KeywordSpotting/*.scc
+
+# Chutzpah Test files
+deploy/KeywordSpotting/_Chutzpah*
+
+# Visual C++ cache files
+deploy/KeywordSpotting/ipch/
+deploy/KeywordSpotting/*.aps
+deploy/KeywordSpotting/*.ncb
+deploy/KeywordSpotting/*.opendb
+deploy/KeywordSpotting/*.opensdf
+deploy/KeywordSpotting/*.sdf
+deploy/KeywordSpotting/*.cachefile
+deploy/KeywordSpotting/*.VC.db
+deploy/KeywordSpotting/*.VC.VC.opendb
+
+# Visual Studio profiler
+deploy/KeywordSpotting/*.psess
+deploy/KeywordSpotting/*.vsp
+deploy/KeywordSpotting/*.vspx
+deploy/KeywordSpotting/*.sap
+
+
+# End of https://www.toptal.com/developers/gitignore/api/visualstudio
