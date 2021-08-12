@@ -30,10 +30,9 @@ int main()
 	params_.paramters["filterbank_channel_count"] = 40;
 	params_.paramters["dct_coefficient_count"] = 40;
 
+
+
 	float threshold = 0.88;
-	std::string wav_file = "E:/github/ASR/Speech-Processing/deploy/data/47850987c8a227b92673f9a88fb7efb8.wav";
-
-
 	// Step2 create KWS module instance
 	KWS kws;
 	kws.ModelInitialize(model_path, params_, threshold);
@@ -41,19 +40,66 @@ int main()
 	std::string keyword = "";
 	float score = 0.0;
 	bool is_wake = false;
-	kws.ProcessWavFile(wav_file, keyword, score, is_wake);
+	// Define variables for modules
+	int label_id = -1;
 	
+	//------------------------TEST1 Prediction with WAV file--------------------------------//
+	std::cout << "//------------------------TEST1 Prediction with WAV file--------------------------------//\n";
+	std::string wav_file = "E:/github/ASR/Speech-Processing/deploy/data/47850987c8a227b92673f9a88fb7efb8.wav";
+	kws.ProcessWavFile(wav_file, keyword, score, is_wake);
 
-	//while (1) { 
-	//	kws.IsAwakenedWithFile(wav_file, keyword, score, is_wake); 
-	//}
 
-	// test wav file list
-	std::string wav_dir = "E:/github/ASR/tensorflow-lite-audio/tensorflow-lite/audios_data";
-	std::string outfile = "./wav_list_result.txt";
-	std::vector<std::vector<std::string>> results;
+	//-------------------------TEST2 Prediction with PCM File-------------------------------//
+	std::cout << "//-------------------------TEST2 Prediction with PCM File-------------------------------//\n";
+	// Test read data from PCM FILE just read int16_t data from pcm file
+	std::string pcm_file = "E:/github/ASR/Speech-Processing/deploy/data/xiaoshunxiaoshun.PCM";
+	std::cout << "Load PCM data from " << pcm_file << std::endl;
+	std::ifstream inFile(pcm_file, std::ifstream::in | std::ifstream::binary);
+	uint16_t bufferLength = 16000;
+	int16_t *buffer = new int16_t[bufferLength];
+	int bufferBPS = (sizeof buffer[0]);
 
-	kws.ProcessWavFileList(wav_dir, results, outfile);
+	// Read all data into float_values
+	// Sample data convert to -1.0~1.0
+	inFile.read((char *)buffer, bufferLength * bufferBPS);
+	inFile.close();
+
+	//std::cout << "Load PCM data completed!\n";
+	// Copy pointer data to vector
+	std::vector<int16_t> data{buffer, buffer+bufferLength};
+	kws.IsAwakenedWithAudio(data, keyword, label_id, score);
+	delete[] buffer;
+	buffer = nullptr;
+
+
+	//-----------------------TEST3 Predicton with PCM Char string format ---------------------//
+	std::cout << "//-----------------------TEST3 Predicton with PCM Char string format ---------------------//\n";
+	// Test PCM `IsAwakenedWithPCM` interface, which was load PCM format data as char string, then convert it to int16_t
+	std::cout << "Load PCM data from " << pcm_file << std::endl;
+	inFile.open(pcm_file, std::ifstream::in | std::ifstream::binary);
+	if (!inFile.is_open()) {
+		std::cout << "Can not open the WAV file !!" << std::endl;
+	}
+
+	std::ostringstream ostr;
+	ostr << inFile.rdbuf();
+	std::string pcm_char_str(ostr.str());
+	int buf_size = pcm_char_str.size();
+	std::cout << "size: " << buf_size << std::endl;
+	inFile.close();
+	kws.IsAwakenedWithPCM(pcm_char_str.c_str(), buf_size, keyword, label_id, score);
+	
+	while (1) { 
+		//kws.IsAwakenedWithFile(wav_file, keyword, score, is_wake); 
+	}
+
+	//------------------------TEST4 prediction from wav file list----------------------------//
+	std::cout << "//------------------------TEST4 prediction from wav file list----------------------------//\n";
+	//std::string wav_dir = "E:/github/ASR/tensorflow-lite-audio/tensorflow-lite/audios_data";
+	//std::string outfile = "./wav_list_result.txt";
+	//std::vector<std::vector<std::string>> results;
+
+	//kws.ProcessWavFileList(wav_dir, results, outfile);
 
 
 
