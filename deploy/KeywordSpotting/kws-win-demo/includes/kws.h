@@ -55,6 +55,10 @@ class KWS {
     // Check result is keyword
     bool IsAwakenedWithAudio(std::vector<int16_t>& audio_samples, std::string &keyword, int& label_id, float &score, float threshold=0.85);
 
+	// Check result is keyword
+	// This is main entrance of application, input raw audio data with PCM format, return the wake or not
+	bool IsAwakenedWithPCM(const char* pcm_data, int pcm_length, std::string &keyword, int& label_id, float &score, float threshold = 0.85);
+
     // Check result is keyword with another
 	bool IsAwakenedWithFeature(std::vector<float>& features, std::string &keyword, int& label_id, float &score, float threshold=0.85);
 
