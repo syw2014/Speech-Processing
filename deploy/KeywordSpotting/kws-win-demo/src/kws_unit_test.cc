@@ -15,7 +15,8 @@
 // link tflite static lib
 #pragma comment( lib, "E:/github/ASR/Speech-Processing/deploy/KeywordSpotting/kws-win-demo/libs/tensorflowlite_c.dll.if.lib" )
 
-int main()
+// *NOTE* If you want to run this project please convert _main to main
+int _main()
 {
 	// Step1 define all parameters
 	std::string model_path = "E:/github/ASR/Speech-Processing/deploy/data/kwsh5.tflite";
