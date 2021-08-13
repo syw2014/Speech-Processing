@@ -69,7 +69,7 @@ class KWS {
     size_t ProcessWavFile(std::string& wav_file, std::string &keyword, float &score, bool is_wake);
 
     // Process wav file list
-    size_t ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile);
+    size_t ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile, float threshold=0.85);
 
   private:
     FeatureExtract feature_extractor_;       // mfcc feature extractor

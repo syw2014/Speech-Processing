@@ -350,7 +350,7 @@ size_t KWS::ProcessWavFile(std::string& wav_file, std::string &keyword, float &s
 
 // Process wav file list
 // TODO: Opitimize process logict, read wav and prediction, current was read all wav, calculate all wav mfcc feature, then prediction
-size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile) {
+size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile, float threshold) {
     
     std::string out_folder = "";
     bool write_to_file = false;
@@ -385,7 +385,7 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
     //std::vector<float> feature;
     // store final result, order was: is_wake, keyword, score
     std::vector<std::string> prediction; 
-    prediction.resize(4);
+    prediction.resize(5);
     bool is_wake = false;
     std::string keyword = "";
     float score = 0.0;
@@ -407,7 +407,7 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
 		score = 0.0;
 		
         // predict
-        is_wake = IsAwakenedWithFile(files[i], keyword, label_id,score, 0.85);
+        is_wake = IsAwakenedWithFile(files[i], keyword, label_id,score, threshold);
 
 		// write to file
 		outfs << filenames[i] << "\t" << ToString(is_wake) << "\t" << keyword << "\t" << label_id
@@ -417,9 +417,10 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
         prediction[1] = ToString(is_wake);    // is_wake
         prediction[2] = keyword;  // keyword
         prediction[3] = ToString(score);  // score
+		prediction[4] = ToString(label_id); // keyword id
         results[i] = prediction;
 		prediction.clear();
-		prediction.resize(4);
+		prediction.resize(5);
     }
 	TEnd = Clock::now();
 	Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
