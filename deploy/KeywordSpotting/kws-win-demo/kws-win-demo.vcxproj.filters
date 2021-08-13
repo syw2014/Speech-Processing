@@ -74,5 +74,8 @@
     <ClCompile Include="src\wav_mfcc_extract.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="kws_report.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

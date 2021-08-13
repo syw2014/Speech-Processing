@@ -169,6 +169,7 @@
     <ClInclude Include="includes\wav_mfcc_extract.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="kws_report.cc" />
     <ClCompile Include="src\fftsg.c" />
     <ClCompile Include="src\fftsg2d.c" />
     <ClCompile Include="src\kws.cc" />
