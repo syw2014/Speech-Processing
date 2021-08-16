@@ -92,11 +92,20 @@ void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
 	//}
 
 	// Filling confusion matrix
+	// positive total number, negative total number for calculate accuracy
+	int pos_samples_num = 0, neg_samples_num = 0;
 	for (int i = 0; i < true_label_maps.size(); ++i) {
 		auto v = true_label_maps[i];
+		if ((i == 0) || (i == 1)) { // 0: silence, 1:unknown
+			neg_samples_num += v.size();
+		}
+		else if ((i == 2) || (i == 3)) {
+			pos_samples_num += v.size();
+		}
 		for (int j = 0; j < v.size(); ++j) {
 			// check prediction same as label
 			// Note here `i` the real label
+
 			if (predictons[j] == i) {
 				matrix[i][i] += 1; // prediction == target
 			}
@@ -107,23 +116,39 @@ void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
 	}
 
 	// print matrix
+	std::cout << "----------------------------------------------------\n";
 	std::cout << "Confuse Matrix:\n";
 	std::cout << "Label 0: silence 1: unknown 2: nihaoxiaoshun 3: xiaoshunxiaoshun\n";
 	std::cout << "Label|\t\t0\t1\t2\t3\n";
 	std::cout << "----------------------------------------------------\n";
-	int acc_cnt = 0, word1_cnt = 0, word2_cnt = 0;
+	int acc_cnt = 0, precision_cnt = 0, w_cnt = 0;
+	// Here we treat word1 and word2 as positive sample, silence and unknown as negative sample
+	// So here we only calculate TP, FP, TN, FN, then we calculate accuracy, precision, recall, F1 score
+	int tp = 0, fp = 0, tn = 0, fn = 0;
+	double accuracy, precision;
 	for (int i = 0; i < num_labels; ++i) {
 		std::cout << "       " << i<<"|\t";
 		for (int j = 0; j < num_labels; ++j) {
 			std::cout << matrix[i][j] << "\t";
+			
 		}
 		std::cout << "\n";
+		// tn
+		if ((i == 0) || (i == 1)) {
+			tn += matrix[i][i];
+		}
+		// count tp
+		if ((i == 2) || (i == 3)) {
+			tp += matrix[i][i];
+		}
 	}
 
 	std::cout << "----------------------------------------------------\n";
 	// Calculate accuracy, precision, AUC, wakeup rate
-	
-	double accuracy, precision;
+	accuracy = (double)(tp+tn) / targets.size();
+	precision = (double)tp / pos_samples_num;
+	std::cout << "Accuracy for 4-labels: " << (tp+tn) << "/" << targets.size() << "=" << accuracy << std::endl;
+	std::cout << "Precision for word1 and word2: " << (tp) << "/" << pos_samples_num << "=" << precision << std::endl;
 	
 }
 
@@ -179,7 +204,7 @@ int main()
 	int num_samples = results.size();
 	std::vector<int> pred_ids(num_samples);
 	std::vector<int> truth_ids(num_samples);
-	std::vector<std::string> num_wakeup;
+	std::vector<double> num_wakeup(num_samples);
 	std::string real_word_id = "";
 	double accuracy = 0.0;
 	double precision = 0.0;
@@ -190,9 +215,10 @@ int main()
 		truth_ids[i] = std::stoi(GetWavLabelID(results[i][0])); // wav file real keyword id
 		
 		// count wakeup 
-		if (results[i][1] == "1") {
-			num_wakeup.push_back(results[i][1]);
-		}
+		num_wakeup[i] = std::stod(results[i][1]);
+		//if (results[i][3] == "1") {
+		//	num_wakeup.push_back(results[i][1]);
+		//}
 	}
 
 	// test confusion matrix
@@ -200,7 +226,27 @@ int main()
 	//std::vector<int> truth_ids{2,0,2,2,0,1};
 
 	ConfusionMatrix(pred_ids, truth_ids);
-
+	int wake_cnt = 0, real_wake_cnt = 0, wrong_wake_cnt  = 0;
+	for (int i = 0; i < num_wakeup.size(); ++i) {
+		if (num_wakeup[i] > threshold) { // score big than threshold regard as wakeup
+			if (pred_ids[i] == truth_ids[i]) {
+				// true keyword
+				if ((truth_ids[i] == 2) || (truth_ids[i] == 3)) {
+					real_wake_cnt += 1;
+				}
+				else {
+					wrong_wake_cnt += 1; // wrong wake
+				}
+			}
+			else {
+				// wrong wake
+				wrong_wake_cnt += 1;
+			}
+		}
+	}
+	std::cout << "----------------------------------------------------\n";
+	std::cout << "True wakeup rate at threshold=" << threshold << "\t rate: " << (double)real_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	std::cout << "Error wakeup rate at threshold= " << threshold << " is: " << (double)wrong_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
 	while(1){}
 
 	return 0;
