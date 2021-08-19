@@ -15,67 +15,70 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="includes\dirent.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\fft.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\fft2d.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\kws.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\mfcc.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\mfcc_dct.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\mfcc_mel_filterbank.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\spectrogram.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\wav_header.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\wav_mfcc_extract.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\kws.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\kws_unit_test.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mfcc.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mfcc_dct.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mfcc_mel_filterbank.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\spectrogram.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\fftsg.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\fftsg2d.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\wav_mfcc_extract.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="kws_report.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="kws_unit_test.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\fftsg.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\fftsg2d.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\kws.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mfcc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mfcc_dct.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mfcc_mel_filterbank.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\spectrogram.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wav_mfcc_extract.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\includes\dirent.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\error_code.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\fft.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\fft2d.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\kws.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\mfcc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\mfcc_dct.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\mfcc_mel_filterbank.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\spectrogram.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\wav_header.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\wav_mfcc_extract.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
