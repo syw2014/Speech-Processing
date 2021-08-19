@@ -13,6 +13,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <algorithm>
+#include <vector>
 
 #include "tflite/c/c_api.h"
 #include "wav_mfcc_extract.h"
