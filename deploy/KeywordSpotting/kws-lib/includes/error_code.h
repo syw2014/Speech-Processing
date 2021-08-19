@@ -11,7 +11,7 @@
 #define ERROR_CODE_H
 
 typedef enum ErrorCode {
-    ERROR_= 0;
+    ERROR_;
 
 }; // error code define
 
