@@ -122,6 +122,20 @@ deploy/KeywordSpotting/ksw-interface/Release
 deploy/KeywordSpotting/ksw-interface/x64
 
 
+deploy-tars/
+deploy/KeywordSpotting/ksw-interface.zip
+deploy/KeywordSpotting/ksw-interface/47850987c8a227b92673f9a88fb7efb8.wav
+deploy/KeywordSpotting/ksw-interface/Debug/
+deploy/KeywordSpotting/ksw-interface/x86libs/
+deploy/KeywordSpotting/ksw-interface/xiaoshunxiaoshun.pcm
+deploy/KeywordSpotting/kws-lib/x64libs/
+deploy/KeywordSpotting/kws-lib/x86libs/
+deploy/KeywordSpotting/kws-win-demo/Debug/
+deploy/KeywordSpotting/kws-win-demo/Release/
+deploy/KeywordSpotting/kws-win-demo/wav_list_result.txt
+
+
+
 
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio
