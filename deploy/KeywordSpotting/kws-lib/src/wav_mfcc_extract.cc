@@ -6,7 +6,7 @@
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\wav_mfcc_extract.cc
  */
-//#include "stdafx.h"
+
 #include "wav_mfcc_extract.h"
 //#include "wav_header.h"
 
@@ -299,10 +299,11 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
 size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
                                      std::vector<double> &norm_samples) {
 
+	std::cout << "Norm\n!";
     // Convert data to -1.0~1.0
     norm_samples.resize(params_.paramters["desired_samples"]);
     size_t audio_data_size = audio_data.size();
-    for (int i = 0; i < audio_data.size(); ++i) {
+    for (int i = 0; i < norm_samples.size(); ++i) {
         if (i >= audio_data_size) {
             norm_samples[i] = 0.0; // padding for the specific sample length
         } else {

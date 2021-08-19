@@ -157,13 +157,14 @@ size_t KWS::GetFeatures(std::vector<int16_t> &audio_data,
     // Audio normalize to -1.0~1.0
     std::vector<double> norm_samples;
     ret = feature_extractor_.AudioDataNorm(audio_data, norm_samples);
-
+	std::cout << "Norm completed!\n";
     // Calculate mfcc features
     std::vector<std::vector<double>> mfcc_features;
     ret = feature_extractor_.ExtractFeatures(norm_samples, mfcc_features);
-
+	std::cout << "feature completed!\n";
     // Check feature dimension and Flat feature as 1-dimension vector
     size_t feat_size = mfcc_features.size() * mfcc_features[0].size();
+	std::cout << "feature size: " << feat_size << std::endl;
     std::string feat_name = "feature_length";
     int value;
     ret = feature_extractor_.GetParameters(feat_name, value);
@@ -236,6 +237,7 @@ bool KWS::IsAwakenedWithAudio(std::vector<int16_t> &audio_samples,std::string &k
     // Step1, audio data convert to features
     std::vector<float> features;
     GetFeatures(audio_samples, features);
+	std::cout << "normalized finished!\n";
 
     // Step2, predict
     std::vector<std::pair<int, float>> logits;
@@ -255,6 +257,28 @@ bool KWS::IsAwakenedWithAudio(std::vector<int16_t> &audio_samples,std::string &k
     }
 
     return ret;
+}
+
+// Check wakeup or not
+// Process PCM format audio data
+bool KWS::IsAwakenedWithPCM(const char* pcm_data, int pcm_length, std::string &keyword, int& label_id, float &score, float threshold) {
+
+	bool ret = false;
+	std::vector<int16_t> audio_data;
+	// TODO convert char* string to int16_t vector
+	// parse PCM format data to int16_t vector, to use stringstream
+	int16_t t;
+	for (int i = 0; i < pcm_length ; i += 2) {
+		memcpy(&t, pcm_data + i, 2); // int16_t was 2bytes, PCM char string was 1byte
+		audio_data.push_back(t);
+	}
+
+	std::cout << "Parsed PCM data completed total size: " << audio_data.size() << std::endl;
+
+	// Prediction
+	ret = IsAwakenedWithAudio(audio_data, keyword, label_id, score, threshold);
+
+	return ret;
 }
 
 // Check result is keyword
@@ -280,6 +304,7 @@ bool KWS::IsAwakenedWithFeature(std::vector<float>& features,std::string &keywor
 
     return ret;
 }
+
 
 // Check wakup with wav file
 bool KWS::IsAwakenedWithFile(std::string& wav_file, std::string &keyword, int& label_id, float &score, bool is_wake) {
@@ -325,7 +350,7 @@ size_t KWS::ProcessWavFile(std::string& wav_file, std::string &keyword, float &s
 
 // Process wav file list
 // TODO: Opitimize process logict, read wav and prediction, current was read all wav, calculate all wav mfcc feature, then prediction
-size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile) {
+size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile, float threshold) {
     
     std::string out_folder = "";
     bool write_to_file = false;
@@ -360,7 +385,7 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
     //std::vector<float> feature;
     // store final result, order was: is_wake, keyword, score
     std::vector<std::string> prediction; 
-    prediction.resize(4);
+    prediction.resize(5);
     bool is_wake = false;
     std::string keyword = "";
     float score = 0.0;
@@ -382,7 +407,7 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
 		score = 0.0;
 		
         // predict
-        is_wake = IsAwakenedWithFile(files[i], keyword, label_id,score, 0.85);
+        is_wake = IsAwakenedWithFile(files[i], keyword, label_id,score, threshold);
 
 		// write to file
 		outfs << filenames[i] << "\t" << ToString(is_wake) << "\t" << keyword << "\t" << label_id
@@ -392,9 +417,10 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
         prediction[1] = ToString(is_wake);    // is_wake
         prediction[2] = keyword;  // keyword
         prediction[3] = ToString(score);  // score
+		prediction[4] = ToString(label_id); // keyword id
         results[i] = prediction;
 		prediction.clear();
-		prediction.resize(4);
+		prediction.resize(5);
     }
 	TEnd = Clock::now();
 	Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
