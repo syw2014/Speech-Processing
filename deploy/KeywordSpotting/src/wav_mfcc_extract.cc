@@ -1,0 +1,520 @@
+/*
+ * @Author: your name
+ * @Date: 2021-08-05 10:13:53
+ * @LastEditTime: 2021-08-09 15:07:26
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \deploy\cc\wav_mfcc_extract.cc
+ */
+
+#include "wav_mfcc_extract.h"
+//#include "wav_header.h"
+
+
+struct WAVHeader {
+	/* RIFF Chunk Descriptor */
+	uint8_t         RIFF[4];        // RIFF Header Magic header,4字节大端序。文件从此处开始，对于WAV或AVI文件，其值总为“RIFF”
+	uint32_t        ChunkSize;      // RIFF Chunk Size,4字节小端序。表示文件总字节数减8，减去的8字节表示,ChunkID与ChunkSize本身所占字节数
+	uint8_t         WAVE[4];        // WAVE Header,4字节大端序。对于WAV文件，其值总为“WAVE”
+									/* "fmt" sub-chunk */
+	uint8_t         fmt[4];         // FMT header, 4字节大端序。其值总为“fmt ”，表示Format Chunk从此处开始
+	uint32_t        Subchunk1Size;  // Size of the fmt chunk,4字节小端序。表示Format Chunk的总字节数减8
+	uint16_t        AudioFormat;    // Audio format 1=PCM,6=mulaw,7=alaw,257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM,2字节小端序
+	uint16_t        NumOfChannels;      // Number of channels 1=Mono 2=Stereo,2字节小端序
+	uint32_t        SamplesPerSec;  // Sampling Frequency in Hz,4字节小端序,表示在每个通道上每秒包含多少帧
+	uint32_t        bytesPerSec;    // bytes per second,4字节小端序。大小等于SampleRate * BlockAlign，表示每秒共包含多少字节
+	uint16_t        blockAlign;     // 2=16-bit mono, 4=16-bit stereo,2字节小端序。大小等于NumChannels * BitsPerSample / 8， 表示每帧的多通道总字节数
+	uint16_t        bitsPerSample;  // Number of bits per sample,2字节小端序。表示每帧包含多少比特
+									/* "data" sub-chunk */
+	uint8_t         Subchunk2ID[4]; // "data"  string,4字节大端序。其值总为“data”，表示Data Chunk从此处开始
+	uint32_t        Subchunk2Size;  // Sampled data length, 4字节小端序。表示data的总字节数
+
+
+};
+
+
+// Constructor
+FeatureExtract::FeatureExtract() {}
+
+// De-constructor
+FeatureExtract::~FeatureExtract() {}
+
+/**
+ * @description: Initialize all module, Paramters,Spectrogram instance, Mfcc
+ * instance
+ * @param {const Params} &params: Paramters instances which contain all the
+ * setting for model
+ * @return Error code
+ */
+size_t FeatureExtract::Initialize(const Params &params) {
+
+    size_t ret;
+
+    // Set parameters
+    this->params_ = params;
+
+    // calcuate some paramters
+    params_.paramters["window_size_samples"] =
+        int(params_.paramters["sample_rate"] *
+            params_.paramters["window_size_ms"] / 1000); // 480
+    params_.paramters["window_stride_samples"] =
+        int(params_.paramters["sample_rate"] *
+            params_.paramters["window_stride_ms"] / 1000); // 160
+    params_.paramters["desired_samples"] =
+        int(params_.paramters["sample_rate"] *
+            params_.paramters["clip_duration_ms"] / 1000); // 16000
+    int length_minus_window = (params_.paramters["desired_samples"] -
+                               params_.paramters["window_size_samples"]);
+    params_.paramters["feature_length"] =
+        params_.paramters["dct_coefficient_count"] *
+        (1 + int(length_minus_window /
+                 params_.paramters["window_stride_samples"])); // 40*(97+1)=3920
+
+    // Print parameters for debug
+    PrintParams();
+
+	// TODO, Check params was correct
+	ret = CheckParams();
+	if (ret != 0) {
+		return ret;
+	}
+
+    // Spectorgram instance initialize
+    bool flag = sgram_.Initialize(params_.paramters["window_size_samples"],
+                                  params_.paramters["window_stride_samples"]);
+    if (!flag) {
+        std::cout << "Spectrogram initialize failed!";
+        // TODO , error code
+        return 1;
+    }
+
+    // Mfcc initialize
+    mfcc_.set_upper_frequency_limit((double)params_.paramters["upper_frequency_limit"]);
+    mfcc_.set_lower_frequency_limit((double)params_.paramters["lower_frequency_limit"]);
+    mfcc_.set_filterbank_channel_count(
+        params_.paramters["filterbank_channel_count"]);
+    mfcc_.set_dct_coefficient_count(params_.paramters["dct_coefficient_count"]);
+
+    return 0;
+}
+
+/**
+ * @description: Check parameters setting was write or not
+ * @param {*}
+ * @return {*}
+ */
+size_t FeatureExtract::CheckParams() {
+    // Sampling rate
+    if (params_.paramters["sample_rate"] != 16000) {
+        std::cout << "Setting audio sampling rate was not 16000!\n";
+        // TODO, error code
+        return 1;
+    }
+
+    // window size
+    if (params_.paramters["window_size_ms"] != 30) {
+        std::cout << "window_size_ms was not <30ms> is different with it when "
+                     "training model";
+        return 1;
+    }
+
+    // window stride
+    if (params_.paramters["window_stride_ms"] != 10) {
+        std::cout << "window_stride_ms was not<10>ms is different with it when "
+                     "training model!\n";
+        return 1;
+    }
+
+    // audio clip
+    if (params_.paramters["clip_duration_ms"] != 1000) {
+        std::cout << "clip_duration_ms was not<1000>ms is different with it "
+                     "when training model!\n";
+        return 1;
+    }
+
+    // upper_frequency_limit
+    if (params_.paramters["upper_frequency_limit"] != 4000) {
+        std::cout << "upper_frequency_limit was not `4000`HZ is different with "
+                     "it when training model!\n";
+        return 1;
+    }
+
+    // lower_frequency_limit
+    if (params_.paramters["lower_frequency_limit"] != 20) {
+        std::cout << "lower_frequency_limit was not `20`HZ is different with "
+                     "it when training model!\n";
+        return 1;
+    }
+
+    // filterbank_channel_count
+    if (params_.paramters["filterbank_channel_count"] != 40) {
+        std::cout << "lower_frequency_limit was not `40` is different with it "
+                     "when training model!\n";
+        return 1;
+    }
+
+    // dct_coefficient_count
+    if (params_.paramters["dct_coefficient_count"] != 40) {
+        std::cout << "dct_coefficient_count was not `40` is different with it "
+                     "when training model!\n";
+        return 1;
+    }
+
+    // feature length
+    if (params_.paramters["feature_length"] != 3920) {
+        std::cout << "feature_length require `3920` but found: "<< params_.paramters["feature_length"] <<"is different with it "
+                     "when training model!\n";
+        return 1;
+    }
+
+    return 0;
+}
+
+void FeatureExtract::PrintParams() {
+    std::cout << "\nclip_duration_ms: "
+              << params_.paramters["clip_duration_ms"]
+              << "ms\nsample_rate: " << params_.paramters["sample_rate"]
+              << "\ndesired_samples: " << params_.paramters["desired_samples"]
+              << "\nwindow_size_ms: " << params_.paramters["window_size_ms"]
+              << "ms\nwindow_size_samples: "
+              << params_.paramters["window_size_samples"]
+              << "\nwindow_stride_ms: "
+              << params_.paramters["window_stride_ms"]
+              << "ms\nwindow_stride_samples: "
+              << params_.paramters["window_stride_samples"]
+              << "\nlower_frequency_limit: "
+              << params_.paramters["lower_frequency_limit"]
+              << "HZ\nupper_frequency_limit: "
+              << params_.paramters["upper_frequency_limit"]
+              << "HZ\nfilterbank_channel_count: "
+              << params_.paramters["filterbank_channel_count"]
+              << "\ndct_coefficient_count: "
+              << params_.paramters["dct_coefficient_count"]
+              << "\nfeature_length: " << params_.paramters["feature_length"]
+              << std::endl;
+}
+
+/**
+ * @description: Read audio data from wav file like tensorflow cc
+ * @param filePath: wav file
+ * @param data: audio sample data
+ * @param decoded_sample_count: decoded how many samples in audio file
+ * @param decoded_channel_count: real audio channel in audio file, we only
+ * support *1-channel*
+ * @param decoded_sample_rate: real sample rate in audio file, only support
+ * *16khz*
+ * @return {*}
+ */
+size_t FeatureExtract::ReadWav(const std::string &filePath,
+                               std::vector<double> &data,
+                               uint32_t &decoded_sample_count,
+                               uint16_t &decoded_channel_count,
+                               uint32_t &decoded_sample_rate) {
+    std::ifstream inFile(filePath, std::ifstream::in | std::ifstream::binary);
+    size_t ret = 0;
+
+    // read wav header and check infos
+    WAVHeader hdr;
+    int headerSize = sizeof(WAVHeader);
+    inFile.read((char *)&hdr, headerSize);
+
+    // Check audio format
+    if (hdr.AudioFormat != 1 || hdr.bitsPerSample != 16) {
+        std::cerr << "Unsupported audio format, use 16 bit PCM Wave"
+                  << std::endl;
+        // TODO, error code
+        return 1;
+    }
+    // Check sampling rate, only support 16khz
+    decoded_sample_rate = hdr.SamplesPerSec;
+    if (hdr.SamplesPerSec != 16000) {
+        std::cerr << "Sampling rate mismatch: Found " << hdr.SamplesPerSec
+                  << " instead of " << 16000 << std::endl;
+        // TODO, error code
+        return 1;
+    }
+
+    // Check audio channel, only support 1-channel
+    decoded_channel_count = hdr.NumOfChannels;
+    if (hdr.NumOfChannels != 1) {
+        std::cerr << hdr.NumOfChannels
+                  << " channel files are unsupported. Use mono." << std::endl;
+        // TODO, add error code
+        return 1;
+    }
+
+    if (!inFile.is_open()) {
+        std::cout << "Can not open the WAV file !!" << std::endl;
+        // TODO, add error code
+        return 1;
+    }
+
+    // read real audio data
+    // calculate how many samples
+    uint32_t expected_bytes = (hdr.bitsPerSample * hdr.NumOfChannels + 7) / 8;
+    std::cout << "chunk_size: " << hdr.ChunkSize
+              << "\tbytes_per_seconds: " << hdr.bytesPerSec
+              << "\texpected bytes: " << expected_bytes
+              << "\tbits_per_samples: " << hdr.bitsPerSample << std::endl;
+    decoded_sample_count = hdr.ChunkSize / expected_bytes;
+    // calculate how many data in audio
+    uint32_t data_count = decoded_sample_count * hdr.NumOfChannels;
+    std::vector<float> float_values;
+    float_values.resize(data_count);
+    std::cout << "Total samples in wav: " << data_count << std::endl;
+
+    uint16_t bufferLength = data_count;
+    int16_t *buffer = new int16_t[bufferLength];
+    int bufferBPS = (sizeof buffer[0]);
+
+    // Read all data into float_values
+    // Sample data convert to -1.0~1.0
+    inFile.read((char *)buffer, bufferLength * bufferBPS);
+    for (int i = 0; i < bufferLength; i++)
+        float_values[i] = Int16SampleToFloat(buffer[i]);
+
+    delete[] buffer;
+	buffer = nullptr;
+    inFile.close();
+
+    // Convert from float to double for the output value.
+    // TODO, here do audio clip the same as in data_process
+    // int clip_duration_ms = 1000; // only 1000ms
+    // int desired_samples = int(decoded_sample_rate * clip_duration_ms / 1000);
+    // data.resize(float_values.size());
+    data.resize(params_.paramters["desired_samples"]);
+    std::cout << "Choose process samples size was: "
+              << params_.paramters["desired_samples"] << std::endl;
+    for (int i = 0; i < params_.paramters["desired_samples"]; ++i) {
+        if (i >= float_values.size()) {
+            data[i] = 0.0; // padding for short audio
+        } else {
+            data[i] = float_values[i];
+        }
+    }
+
+    return 0;
+}
+
+size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
+                                     std::vector<double> &norm_samples) {
+
+	std::cout << "Norm\n!";
+    // Convert data to -1.0~1.0
+    norm_samples.resize(params_.paramters["desired_samples"]);
+    size_t audio_data_size = audio_data.size();
+    for (int i = 0; i < norm_samples.size(); ++i) {
+        if (i >= audio_data_size) {
+            norm_samples[i] = 0.0; // padding for the specific sample length
+        } else {
+            norm_samples[i] = Int16SampleToFloat(audio_data[i]);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @description: Input audio samples and calculate spectrogram
+ * @param {vector<double>} audio_samples, input audio samples
+ * @param {uint32_t} &sample_rate
+ * @return {*}
+ */
+size_t FeatureExtract::GetSpectrogram(
+    std::vector<double> audio_samples,
+    std::vector<std::vector<double>> &spectrogram_output) {
+    // Step1, convert audio data to spectrogram
+    // std::vector<std::vector<double>> spectrogram_output;
+    // *NOTE*, fft state
+    sgram_.Reset();
+    sgram_.ComputeSquaredMagnitudeSpectrogram(audio_samples,
+                                              &spectrogram_output);
+    std::cout << "spectrogram size: " << spectrogram_output.size()
+              << "\tinternal vector size: " << spectrogram_output[0].size()
+              << std::endl;
+	return 0;
+}
+
+/**
+ * @description: Calculate MFCC features based on spectrogram
+ * @param spectrogram_output: input spectrogram vectors
+ * @param mfcc_features: mfcc feature vectors
+ * @return error code
+ */
+size_t FeatureExtract::SpectrogramToMfcc(
+    std::vector<std::vector<double>> &spectrogram_output,
+    std::vector<std::vector<double>> &mfcc_features) {
+    int spectrogram_channels = spectrogram_output[0].size();
+    mfcc_.Initialize(spectrogram_channels, params_.paramters["sample_rate"]);
+    for (int i = 0; i < spectrogram_output.size(); ++i) {
+        std::vector<double> mfcc_out;
+        mfcc_.Compute(spectrogram_output[i], &mfcc_out);
+        // assert(mfcc_out.size() == dct_coefficient_count_);
+        mfcc_features.push_back(mfcc_out);
+    }
+
+    // print results
+    std::cout << "mfcc out total frames: " << mfcc_features.size()
+              << " frame dimension: " << mfcc_features[0].size() << std::endl;
+    return 0;
+}
+
+// Extract features, calculate mfcc features
+size_t FeatureExtract::ExtractFeatures(
+    std::vector<double> audio_samples,
+    std::vector<std::vector<double>> &mfcc_features) {
+    size_t ret = 0;
+
+    Clock::time_point TStart, TEnd;
+    TStart = Clock::now();
+    // Step1, calculate spectrogram
+    std::vector<std::vector<double>> spectrogram_output;
+    ret = GetSpectrogram(audio_samples, spectrogram_output);
+
+    // Step2, calculate mfcc
+    ret = SpectrogramToMfcc(spectrogram_output, mfcc_features);
+
+    TEnd = Clock::now();
+    Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
+    std::cout << "Completed audio mfcc feature extraction cost time: "
+              << ms.count() << "ms" << std::endl;
+    return 0;
+}
+
+// Setting parameters
+size_t FeatureExtract::SetParameters(const std::string &param_name,
+                                     int &value) {
+    // Check parameter name exist or not
+    if (params_.paramters.find(param_name) == params_.paramters.end()) {
+        std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
+        return 1;
+    }
+
+    // Set paramters
+    params_.paramters[param_name] = value;
+    return 0;
+}
+
+// Get parameters
+size_t FeatureExtract::GetParameters(const std::string &param_name,
+                                     int &value) {
+    // Check parameter name exist or not
+    if (params_.paramters.find(param_name) == params_.paramters.end()) {
+        std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
+        return 1;
+    }
+
+    // Get paramters
+    value = params_.paramters[param_name];
+	return 0;
+}
+
+// Calculate mfcc features for a wav file, can be write features to file
+size_t FeatureExtract::ProcessSingleWav(
+    std::string filename, std::string outfile, bool write_to_file,
+    std::vector<std::vector<double>> &mfcc_features) {
+    std::cout << "Start extract audio features from file: " << filename
+              << std::endl;
+    Clock::time_point TStart, TEnd;
+
+    std::vector<double>
+        audio_samples; // to store audio sample data, norm to -1.0~1.0
+    uint32_t decoded_sample_count;  // how many samples in wav file
+    uint16_t decoded_channel_count; // how many channels in wav file
+    uint32_t decoded_sample_rate;   // the real sample rate of wav file
+
+    size_t ret = ReadWav(filename, audio_samples, decoded_sample_count,
+                         decoded_channel_count, decoded_sample_rate);
+    if (ret != 0) {
+        std::cout << "Load audio data error!\n";
+        return 1;
+    }
+	TStart = Clock::now();
+    // Get Spectrogram and mfcc features
+    ret = ExtractFeatures(audio_samples, mfcc_features);
+
+    TEnd = Clock::now();
+    Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
+    std::cout << "Completed audio mfcc feature extraction cost time: "
+              << ms.count() << "ms" << std::endl;
+
+    // Save mfcc features to files
+	if (write_to_file) {
+		std::ofstream outfs(outfile);
+		if (!outfs.is_open()) {
+			std::cout << "Open outfile " << outfile << "error!\n";
+			return 1;
+		}
+
+		outfs << std::fixed << std::setprecision(8);
+		for (int i = 0; i < mfcc_features.size(); ++i) {
+			for (int j = 0; j < mfcc_features[i].size(); ++j) {
+				outfs << mfcc_features[i][j] << " ";
+			}
+			outfs << std::endl;
+		}
+		outfs.close();
+	}
+    return 0;
+}
+
+// Calculate mfcc features for given wav folder
+size_t FeatureExtract::ProcessWavFileList(
+    std::string wav_folder, std::string out_folder,
+    std::vector<std::string> &filenames, bool write_to_file,
+    std::vector<std::vector<std::vector<double>>> &mfcc_feature_list) {
+
+    DIR *pDir;
+    struct dirent *ptr;
+    std::vector<std::string> files;
+    std::vector<std::string> outfiles;
+
+    // *NOTE*, wav file name format like 5338ca0367ec5ef0d43244cdae31dda7.wav_2
+    if (!(pDir = opendir(wav_folder.c_str()))) {
+        perror(("Folder " + wav_folder + "doesn't exist!").c_str());
+        return 1;
+    }
+    while ((ptr = readdir(pDir)) != 0) {
+        if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
+            // std::cout << ptr->d_name << std::endl;
+            // extract label
+            // std::vector<std::string> vec;
+            // std::string delimiter = "_";
+            // SplitWord(ptr->d_name, vec, delimiter);
+            // if (vec.size() != 2) {
+            //     std::cout << "wav file name not contain label: " <<
+            //     ptr->d_name
+            //               << std::endl;
+            // }
+
+            // 5338ca0367ec5ef0d43244cdae31dda7.wav_2
+            files.push_back(wav_folder + "/" + ptr->d_name);
+            filenames.push_back(ptr->d_name);
+            // mfcc.5338ca0367ec5ef0d43244cdae31dda7.wav_2
+            outfiles.push_back(out_folder + "/" + "mfcc." + ptr->d_name);
+        }
+    }
+    closedir(pDir);
+	pDir = nullptr;
+
+    std::vector<std::vector<double>> mfcc_features;
+    for (int i = 0; i < files.size(); ++i) {
+        ProcessSingleWav(files[i], outfiles[i], false, mfcc_features);
+        mfcc_feature_list.push_back(mfcc_features);
+    }
+
+    return 0;
+}
+
+// Mfcc feature flat
+void FeatureExtract::MfccFlat(std::vector<std::vector<double>> &mfcc_feature,
+                              std::vector<float> &feature) {
+    size_t feat_size = mfcc_feature.size() * mfcc_feature[0].size();
+    feature.resize(feat_size);
+    for (int i = 0; i < mfcc_feature.size(); ++i) {
+        for (int j = 0; j < mfcc_feature[i].size(); ++j) {
+            size_t index = i * mfcc_feature[i].size() + j;
+            feature[index] = mfcc_feature[i][j];
+        }
+    }
+}
