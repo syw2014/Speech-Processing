@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="includes\kws.h" />
+    <ClCompile Include="src\interface_demo.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\interface_demo.cc" />
+    <ClInclude Include="includes\kws.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5338EB39-2A67-4D59-9836-ADF4AAD81358}</ProjectGuid>
@@ -87,7 +87,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\includes;$(IncludePath)</IncludePath>
+    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;$(IncludePath)</IncludePath>
     <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\x86libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,7 +135,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

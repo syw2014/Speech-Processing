@@ -82,8 +82,8 @@
     <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\includes;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\x86libs;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\tflite-libs\x86libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -132,7 +132,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -145,7 +145,7 @@
       <AdditionalDependencies>tensorflowlite_c.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-lib\x86libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\tflite-libs\x86libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -176,27 +176,27 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="includes\dirent.h" />
-    <ClInclude Include="includes\fft.h" />
-    <ClInclude Include="includes\fft2d.h" />
-    <ClInclude Include="includes\kws.h" />
-    <ClInclude Include="includes\mfcc.h" />
-    <ClInclude Include="includes\mfcc_dct.h" />
-    <ClInclude Include="includes\mfcc_mel_filterbank.h" />
-    <ClInclude Include="includes\spectrogram.h" />
-    <ClInclude Include="includes\wav_header.h" />
-    <ClInclude Include="includes\wav_mfcc_extract.h" />
+    <ClInclude Include="..\includes\dirent.h" />
+    <ClInclude Include="..\includes\error_code.h" />
+    <ClInclude Include="..\includes\fft.h" />
+    <ClInclude Include="..\includes\fft2d.h" />
+    <ClInclude Include="..\includes\kws.h" />
+    <ClInclude Include="..\includes\mfcc.h" />
+    <ClInclude Include="..\includes\mfcc_dct.h" />
+    <ClInclude Include="..\includes\mfcc_mel_filterbank.h" />
+    <ClInclude Include="..\includes\spectrogram.h" />
+    <ClInclude Include="..\includes\wav_header.h" />
+    <ClInclude Include="..\includes\wav_mfcc_extract.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\fft2d\fftsg.c" />
-    <ClCompile Include="src\fft2d\fftsg2d.c" />
-    <ClCompile Include="src\kws.cc" />
-    <ClCompile Include="src\mfcc.cc" />
-    <ClCompile Include="src\mfcc_dct.cc" />
-    <ClCompile Include="src\mfcc_mel_filterbank.cc" />
-    <ClCompile Include="src\spectrogram.cc" />
-    <ClCompile Include="src\wav_header.cc" />
-    <ClCompile Include="src\wav_mfcc_extract.cc" />
+    <ClCompile Include="..\src\fftsg.c" />
+    <ClCompile Include="..\src\fftsg2d.c" />
+    <ClCompile Include="..\src\kws.cc" />
+    <ClCompile Include="..\src\mfcc.cc" />
+    <ClCompile Include="..\src\mfcc_dct.cc" />
+    <ClCompile Include="..\src\mfcc_mel_filterbank.cc" />
+    <ClCompile Include="..\src\spectrogram.cc" />
+    <ClCompile Include="..\src\wav_mfcc_extract.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
