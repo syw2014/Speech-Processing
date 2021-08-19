@@ -13,6 +13,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <algorithm>
+#include <vector>
 
 #include "tflite/c/c_api.h"
 #include "wav_mfcc_extract.h"
@@ -55,6 +56,10 @@ class KWS {
     // Check result is keyword
     bool IsAwakenedWithAudio(std::vector<int16_t>& audio_samples, std::string &keyword, int& label_id, float &score, float threshold=0.85);
 
+	// Check result is keyword
+	// This is main entrance of application, input raw audio data with PCM format, return the wake or not
+	bool IsAwakenedWithPCM(const char* pcm_data, int pcm_length, std::string &keyword, int& label_id, float &score, float threshold = 0.85);
+
     // Check result is keyword with another
 	bool IsAwakenedWithFeature(std::vector<float>& features, std::string &keyword, int& label_id, float &score, float threshold=0.85);
 
@@ -65,7 +70,7 @@ class KWS {
     size_t ProcessWavFile(std::string& wav_file, std::string &keyword, float &score, bool is_wake);
 
     // Process wav file list
-    size_t ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile);
+    size_t ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std::string>>& results, std::string& outfile, float threshold=0.85);
 
   private:
     FeatureExtract feature_extractor_;       // mfcc feature extractor
