@@ -13,7 +13,7 @@
 
 
 // link tflite static lib
-#pragma comment( lib, "E:/github/ASR/Speech-Processing/deploy/KeywordSpotting/kws-win-demo/libs/tensorflowlite_c.dll.if.lib" )
+//#pragma comment( lib, "E:/github/ASR/Speech-Processing/deploy/KeywordSpotting/x64/Release/tensorflow-lite.lib" )
 
 
 // A simple option parser
@@ -153,7 +153,7 @@ void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
 }
 
 
-int main()
+int _main()
 {
 
 	// Step1 define all parameters
