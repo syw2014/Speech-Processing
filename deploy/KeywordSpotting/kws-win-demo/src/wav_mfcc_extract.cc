@@ -299,6 +299,7 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
 size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
                                      std::vector<double> &norm_samples) {
 
+	std::cout << "Norm\n!";
     // Convert data to -1.0~1.0
     norm_samples.resize(params_.paramters["desired_samples"]);
     size_t audio_data_size = audio_data.size();
