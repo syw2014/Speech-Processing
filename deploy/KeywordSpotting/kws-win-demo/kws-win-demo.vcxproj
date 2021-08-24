@@ -168,6 +168,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\error_code.cc" />
     <ClCompile Include="..\src\fftsg.c" />
     <ClCompile Include="..\src\fftsg2d.c" />
     <ClCompile Include="..\src\kws.cc" />

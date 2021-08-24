@@ -45,6 +45,9 @@
     <ClCompile Include="..\src\wav_mfcc_extract.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\error_code.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\includes\dirent.h">
