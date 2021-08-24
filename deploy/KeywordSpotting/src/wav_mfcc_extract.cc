@@ -8,6 +8,7 @@
  */
 
 #include "wav_mfcc_extract.h"
+#include "error_code.h"
 //#include "wav_header.h"
 
 
@@ -71,8 +72,9 @@ size_t FeatureExtract::Initialize(const Params &params) {
                  params_.paramters["window_stride_samples"])); // 40*(97+1)=3920
 
     // Print parameters for debug
+#ifdef MDEBUG
     PrintParams();
-
+#endif
 	// TODO, Check params was correct
 	ret = CheckParams();
 	if (ret != 0) {
@@ -85,7 +87,7 @@ size_t FeatureExtract::Initialize(const Params &params) {
     if (!flag) {
         std::cout << "Spectrogram initialize failed!";
         // TODO , error code
-        return 1;
+        return E_mfcc_param_spectrogram_init;
     }
 
     // Mfcc initialize
@@ -106,65 +108,65 @@ size_t FeatureExtract::Initialize(const Params &params) {
 size_t FeatureExtract::CheckParams() {
     // Sampling rate
     if (params_.paramters["sample_rate"] != 16000) {
-        std::cout << "Setting audio sampling rate was not 16000!\n";
+        //std::cout << "Setting audio sampling rate was not 16000!\n";
         // TODO, error code
-        return 1;
+        return E_mfcc_param_rate;
     }
 
     // window size
     if (params_.paramters["window_size_ms"] != 30) {
-        std::cout << "window_size_ms was not <30ms> is different with it when "
-                     "training model";
-        return 1;
+        //std::cout << "window_size_ms was not <30ms> is different with it when "
+                     //"training model";
+        return E_mfcc_param_window_size;
     }
 
     // window stride
     if (params_.paramters["window_stride_ms"] != 10) {
-        std::cout << "window_stride_ms was not<10>ms is different with it when "
-                     "training model!\n";
-        return 1;
+        //std::cout << "window_stride_ms was not<10>ms is different with it when "
+                     //"training model!\n";
+        return E_mfcc_param_window_stride;
     }
 
     // audio clip
     if (params_.paramters["clip_duration_ms"] != 1000) {
-        std::cout << "clip_duration_ms was not<1000>ms is different with it "
-                     "when training model!\n";
-        return 1;
+        //std::cout << "clip_duration_ms was not<1000>ms is different with it "
+                     //"when training model!\n";
+        return E_mfcc_param_clip_duration;
     }
 
     // upper_frequency_limit
     if (params_.paramters["upper_frequency_limit"] != 4000) {
-        std::cout << "upper_frequency_limit was not `4000`HZ is different with "
-                     "it when training model!\n";
-        return 1;
+        //std::cout << "upper_frequency_limit was not `4000`HZ is different with "
+                     //"it when training model!\n";
+        return E_mfcc_param_upper_frequency;
     }
 
     // lower_frequency_limit
     if (params_.paramters["lower_frequency_limit"] != 20) {
-        std::cout << "lower_frequency_limit was not `20`HZ is different with "
-                     "it when training model!\n";
-        return 1;
+        //std::cout << "lower_frequency_limit was not `20`HZ is different with "
+                     //"it when training model!\n";
+        return E_mfcc_param_lower_frequency;
     }
 
     // filterbank_channel_count
     if (params_.paramters["filterbank_channel_count"] != 40) {
-        std::cout << "lower_frequency_limit was not `40` is different with it "
-                     "when training model!\n";
-        return 1;
+        //std::cout << "lower_frequency_limit was not `40` is different with it "
+                     //"when training model!\n";
+        return E_mfcc_param_filterbank_channel;
     }
 
     // dct_coefficient_count
     if (params_.paramters["dct_coefficient_count"] != 40) {
-        std::cout << "dct_coefficient_count was not `40` is different with it "
-                     "when training model!\n";
-        return 1;
+        //std::cout << "dct_coefficient_count was not `40` is different with it "
+        //             "when training model!\n";
+        return E_mfcc_param_dct_coefficient;
     }
 
     // feature length
     if (params_.paramters["feature_length"] != 3920) {
-        std::cout << "feature_length require `3920` but found: "<< params_.paramters["feature_length"] <<"is different with it "
-                     "when training model!\n";
-        return 1;
+        //std::cout << "feature_length require `3920` but found: "<< params_.paramters["feature_length"] <<"is different with it "
+        //             "when training model!\n";
+        return E_mfcc_param_feature_length;
     }
 
     return 0;
@@ -212,6 +214,13 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
                                uint32_t &decoded_sample_rate) {
     std::ifstream inFile(filePath, std::ifstream::in | std::ifstream::binary);
     size_t ret = 0;
+	if (!inFile.is_open()) {
+#ifdef MDEBUG
+		std::cout << "Can not open the WAV file !!" << std::endl;
+#endif
+		// TODO, add error code
+		return E_wav_open;
+	}
 
     // read wav header and check infos
     WAVHeader hdr;
@@ -220,48 +229,47 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
 
     // Check audio format
     if (hdr.AudioFormat != 1 || hdr.bitsPerSample != 16) {
-        std::cerr << "Unsupported audio format, use 16 bit PCM Wave"
-                  << std::endl;
+        //std::cerr << "Unsupported audio format, use 16 bit PCM Wave"
+        //          << std::endl;
         // TODO, error code
-        return 1;
+        return E_wav_audio_format;
     }
     // Check sampling rate, only support 16khz
     decoded_sample_rate = hdr.SamplesPerSec;
     if (hdr.SamplesPerSec != 16000) {
-        std::cerr << "Sampling rate mismatch: Found " << hdr.SamplesPerSec
-                  << " instead of " << 16000 << std::endl;
+        //std::cerr << "Sampling rate mismatch: Found " << hdr.SamplesPerSec
+        //          << " instead of " << 16000 << std::endl;
         // TODO, error code
-        return 1;
+        return E_wav_audio_format;
     }
 
     // Check audio channel, only support 1-channel
     decoded_channel_count = hdr.NumOfChannels;
     if (hdr.NumOfChannels != 1) {
-        std::cerr << hdr.NumOfChannels
-                  << " channel files are unsupported. Use mono." << std::endl;
+        //std::cerr << hdr.NumOfChannels
+        //          << " channel files are unsupported. Use mono." << std::endl;
         // TODO, add error code
-        return 1;
+        return E_wav_audio_format;
     }
 
-    if (!inFile.is_open()) {
-        std::cout << "Can not open the WAV file !!" << std::endl;
-        // TODO, add error code
-        return 1;
-    }
 
     // read real audio data
     // calculate how many samples
     uint32_t expected_bytes = (hdr.bitsPerSample * hdr.NumOfChannels + 7) / 8;
+#ifdef MDEBUG
     std::cout << "chunk_size: " << hdr.ChunkSize
               << "\tbytes_per_seconds: " << hdr.bytesPerSec
               << "\texpected bytes: " << expected_bytes
               << "\tbits_per_samples: " << hdr.bitsPerSample << std::endl;
+#endif
     decoded_sample_count = hdr.ChunkSize / expected_bytes;
     // calculate how many data in audio
     uint32_t data_count = decoded_sample_count * hdr.NumOfChannels;
     std::vector<float> float_values;
     float_values.resize(data_count);
+#ifdef MDEBUG
     std::cout << "Total samples in wav: " << data_count << std::endl;
+#endif
 
     uint16_t bufferLength = data_count;
     int16_t *buffer = new int16_t[bufferLength];
@@ -283,8 +291,10 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
     // int desired_samples = int(decoded_sample_rate * clip_duration_ms / 1000);
     // data.resize(float_values.size());
     data.resize(params_.paramters["desired_samples"]);
+#ifdef MDEBUG
     std::cout << "Choose process samples size was: "
               << params_.paramters["desired_samples"] << std::endl;
+#endif
     for (int i = 0; i < params_.paramters["desired_samples"]; ++i) {
         if (i >= float_values.size()) {
             data[i] = 0.0; // padding for short audio
@@ -299,7 +309,6 @@ size_t FeatureExtract::ReadWav(const std::string &filePath,
 size_t FeatureExtract::AudioDataNorm(std::vector<int16_t> &audio_data,
                                      std::vector<double> &norm_samples) {
 
-	std::cout << "Norm\n!";
     // Convert data to -1.0~1.0
     norm_samples.resize(params_.paramters["desired_samples"]);
     size_t audio_data_size = audio_data.size();
@@ -329,9 +338,11 @@ size_t FeatureExtract::GetSpectrogram(
     sgram_.Reset();
     sgram_.ComputeSquaredMagnitudeSpectrogram(audio_samples,
                                               &spectrogram_output);
+#ifdef MDEBUG
     std::cout << "spectrogram size: " << spectrogram_output.size()
               << "\tinternal vector size: " << spectrogram_output[0].size()
               << std::endl;
+#endif
 	return 0;
 }
 
@@ -353,9 +364,11 @@ size_t FeatureExtract::SpectrogramToMfcc(
         mfcc_features.push_back(mfcc_out);
     }
 
+#ifdef MDEBUG
     // print results
     std::cout << "mfcc out total frames: " << mfcc_features.size()
               << " frame dimension: " << mfcc_features[0].size() << std::endl;
+#endif
     return 0;
 }
 
@@ -376,9 +389,11 @@ size_t FeatureExtract::ExtractFeatures(
 
     TEnd = Clock::now();
     Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
+#ifdef MDEBUG
     std::cout << "Completed audio mfcc feature extraction cost time: "
               << ms.count() << "ms" << std::endl;
-    return 0;
+#endif
+    return ret;
 }
 
 // Setting parameters
@@ -386,8 +401,8 @@ size_t FeatureExtract::SetParameters(const std::string &param_name,
                                      int &value) {
     // Check parameter name exist or not
     if (params_.paramters.find(param_name) == params_.paramters.end()) {
-        std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
-        return 1;
+        //std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
+        return E_mfcc_param_not_exist;
     }
 
     // Set paramters
@@ -400,8 +415,9 @@ size_t FeatureExtract::GetParameters(const std::string &param_name,
                                      int &value) {
     // Check parameter name exist or not
     if (params_.paramters.find(param_name) == params_.paramters.end()) {
-        std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
-        return 1;
+        //std::cout << "[ERROR]: Parameter: " << param_name << "is not exist!\n";
+		//std::cout << err_code_to_msg[E_mfcc_param_not_exist] << std::endl;
+        return E_mfcc_param_not_exist;
     }
 
     // Get paramters
@@ -413,8 +429,10 @@ size_t FeatureExtract::GetParameters(const std::string &param_name,
 size_t FeatureExtract::ProcessSingleWav(
     std::string filename, std::string outfile, bool write_to_file,
     std::vector<std::vector<double>> &mfcc_features) {
+#ifdef MDEBUG
     std::cout << "Start extract audio features from file: " << filename
               << std::endl;
+#endif
     Clock::time_point TStart, TEnd;
 
     std::vector<double>
@@ -426,8 +444,8 @@ size_t FeatureExtract::ProcessSingleWav(
     size_t ret = ReadWav(filename, audio_samples, decoded_sample_count,
                          decoded_channel_count, decoded_sample_rate);
     if (ret != 0) {
-        std::cout << "Load audio data error!\n";
-        return 1;
+        //std::cout << "Load audio data error!\n";
+        return E_wav_open;
     }
 	TStart = Clock::now();
     // Get Spectrogram and mfcc features
@@ -442,8 +460,8 @@ size_t FeatureExtract::ProcessSingleWav(
 	if (write_to_file) {
 		std::ofstream outfs(outfile);
 		if (!outfs.is_open()) {
-			std::cout << "Open outfile " << outfile << "error!\n";
-			return 1;
+			//std::cout << "Open outfile " << outfile << "error!\n";
+			return E_wav_open_outfile;
 		}
 
 		outfs << std::fixed << std::setprecision(8);
@@ -471,8 +489,8 @@ size_t FeatureExtract::ProcessWavFileList(
 
     // *NOTE*, wav file name format like 5338ca0367ec5ef0d43244cdae31dda7.wav_2
     if (!(pDir = opendir(wav_folder.c_str()))) {
-        perror(("Folder " + wav_folder + "doesn't exist!").c_str());
-        return 1;
+        //perror(("Folder " + wav_folder + "doesn't exist!").c_str());
+        return E_wav_open_folder;
     }
     while ((ptr = readdir(pDir)) != 0) {
         if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {

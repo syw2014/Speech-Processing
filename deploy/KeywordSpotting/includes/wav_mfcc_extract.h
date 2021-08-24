@@ -10,6 +10,9 @@
 #ifndef WAV_MFCC_EXTRACT_H
 #define WAV_MFCC_EXTRACT_H
 
+// MDEBUG macro for cmake 
+//#define MDEBUG
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -28,6 +31,7 @@
 #include "mfcc.h"
 #include "spectrogram.h"
 //#include "wav_header.h"
+
 
 static const int16_t kint16min = static_cast<int16_t>(~0x7FFF);
 static const int16_t kint16max = static_cast<int16_t>(0x7FFF);

@@ -32,7 +32,7 @@ class KWS {
     ~KWS();
 
     // Initialize all state
-    size_t ModelInitialize(std::string &model_path, Params &params, float threshold=0.9);
+    size_t ModelInitialize(std::string &model_path, Params &params, float threshold=0.88);
 
     // Get output tensor from Tflite model
 	size_t GetOutputTensorByName(const char *name);

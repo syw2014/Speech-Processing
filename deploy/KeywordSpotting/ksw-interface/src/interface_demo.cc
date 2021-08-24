@@ -41,6 +41,7 @@ int main()
 	//kws.ProcessWavFile(wav_file, keyword, score, is_wake);
 
 	// Step1 define all parameters
+	// **TODO**, change the path of model, it in ./data/kwsh5.tflite
 	std::string model_path = "E:/github/ASR/Speech-Processing/deploy/data/kwsh5.tflite";
 	Params params_;
 	// Parameter settings
@@ -72,6 +73,7 @@ int main()
 	//-------------------------TEST2 Prediction with PCM File-------------------------------//
 	std::cout << "//-------------------------TEST2 Prediction with PCM File-------------------------------//\n";
 	// Test read data from PCM FILE just read int16_t data from pcm file
+	// **TODO**, change the path of model, it in ./data/xiaoshunxiaoshun.PCM
 	std::string pcm_file = "E:/github/ASR/Speech-Processing/deploy/data/xiaoshunxiaoshun.PCM";
 	std::cout << "Load PCM data from " << pcm_file << std::endl;
 	std::ifstream inFile(pcm_file, std::ifstream::in | std::ifstream::binary);

@@ -6,8 +6,9 @@
  * @Description: In User Settings Edit
  * @FilePath: \deploy\cc\kws.cc
  */
-//#include "stdafx.h"
+
 #include "kws.h"
+#include "error_code.h"
 
 template <typename T>
 std::string ToString(T Num)
@@ -68,15 +69,19 @@ size_t KWS::ModelInitialize(std::string &model_path, Params &params,
     TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
     interpreter_ = TfLiteInterpreterCreate(model, options);
     if (interpreter_ == nullptr) {
+#ifdef MDEBUG
         std::cout << " [ERROR]: Create interpreter failed!\n";
+#endif
         // TODO error code
-        return 1;
+        return E_tflite_create_interpreter;
     }
 
     // Allocate tensor buffers
     if (TfLiteInterpreterAllocateTensors(interpreter_) != kTfLiteOk) {
+#ifdef MDEBUG
         std::cout << "Failed to allocate tensors!\n";
-        return 1;
+#endif
+        return E_tflite_allocate_tensor;
     }
 
     // get input and output tensor for model input and output
@@ -103,7 +108,7 @@ size_t KWS::GetOutputTensorByName(const char *name) {
             return 0;
         }
     }
-    return 1;
+    return E_tflite_output_tensor_name;
 }
 
 // Get input tensor from Tflite model
@@ -116,7 +121,7 @@ size_t KWS::GetInputTensorByName(const char *name) {
             return 0;
         }
     }
-    return 1;
+    return E_tflite_input_tensor_name;
 }
 
 // Model inference
@@ -126,7 +131,7 @@ size_t KWS::Inference(const std::vector<float> &features, const size_t &feature_
     // Copy data from vector to tensor
 	TfLiteTensorCopyFromBuffer(input_tensor_, features.data(), feature_length * sizeof(float));
 	TfLiteInterpreterInvoke(interpreter_);
-	// TODO, here 4 is the number of label, so you should know the right number before inference
+	// TODO, here 4 is the number of label, so you should know the right label number before inference
 	float prediction[4];
     logits.resize(label_num_);
     // Copy data from tensor to buffer
@@ -135,15 +140,6 @@ size_t KWS::Inference(const std::vector<float> &features, const size_t &feature_
         logits[i] = std::make_pair(i, prediction[i]);
     }
 
-	// float maxV = -1;
-	// int maxIdx = -1;
-	// for (int i = 0; i < 4; ++i) {
-	// 	if (logits[i] > maxV) {
-	// 		maxV = logits[i];
-	// 		maxIdx = i;
-	// 	}
-	// }
-	// cout << u8"类别：" << maxIdx << u8"，概率：" << maxV << endl;
 	return 0;
 }
 
@@ -157,20 +153,25 @@ size_t KWS::GetFeatures(std::vector<int16_t> &audio_data,
     // Audio normalize to -1.0~1.0
     std::vector<double> norm_samples;
     ret = feature_extractor_.AudioDataNorm(audio_data, norm_samples);
-	std::cout << "Norm completed!\n";
+	//std::cout << "Norm completed!\n";
     // Calculate mfcc features
     std::vector<std::vector<double>> mfcc_features;
     ret = feature_extractor_.ExtractFeatures(norm_samples, mfcc_features);
-	std::cout << "feature completed!\n";
+	//std::cout << "feature completed!\n";
     // Check feature dimension and Flat feature as 1-dimension vector
     size_t feat_size = mfcc_features.size() * mfcc_features[0].size();
+#ifdef MDEBUG
 	std::cout << "feature size: " << feat_size << std::endl;
+#endif
     std::string feat_name = "feature_length";
     int value;
     ret = feature_extractor_.GetParameters(feat_name, value);
     if(feat_size != value) {
+#ifndef MDEBUG
         std::cout << "[ERROR]: feature dimension: " << feat_size << "was not the same as setting: "
                 << value << std::endl;
+#endif
+		return E_mfcc_param_feature_length;
     }
 
     // Flat 2-D feature(vector<vector<double>>) as 1-D feature(vector<float>)
@@ -191,8 +192,8 @@ size_t KWS::ParseLogits(std::vector<std::pair<int, float>> &logits, std::string 
     // Check empty results
     size_t logit_size = logits.size();
     if ((logit_size == 0) && (logit_size != label_num_)) {
-        std::cout << "[ERROR] label prediction error!\n";
-        return 1;
+        //std::cout << "[ERROR] label prediction error!\n";
+        return E_tflite_logit_label_num;
     }
     float max_score = -1.0;
     int max_label_id = -1;
@@ -202,7 +203,9 @@ size_t KWS::ParseLogits(std::vector<std::pair<int, float>> &logits, std::string 
             max_score = logits[i].second;
             max_label_id = logits[i].first;
         }
+#ifdef MDEBUG
         std::cout << "Prediction label: " << logits[i].first << "\tscore: " << logits[i].second << std::endl;
+#endif
     }
 
     // Get the keywords
@@ -237,7 +240,7 @@ bool KWS::IsAwakenedWithAudio(std::vector<int16_t> &audio_samples,std::string &k
     // Step1, audio data convert to features
     std::vector<float> features;
     GetFeatures(audio_samples, features);
-	std::cout << "normalized finished!\n";
+	//std::cout << "normalized finished!\n";
 
     // Step2, predict
     std::vector<std::pair<int, float>> logits;
@@ -252,7 +255,9 @@ bool KWS::IsAwakenedWithAudio(std::vector<int16_t> &audio_samples,std::string &k
     // Step4, check weather wake or not
     bool ret = false;
     if (IsKeyword(keyword) && (score >= threshold)) {
+#ifdef MDEBUG
         std::cout << "Bot was wake, keyword: " << keyword << " score: " << score << std::endl;
+#endif
         ret = true;
     }
 
@@ -272,8 +277,9 @@ bool KWS::IsAwakenedWithPCM(const char* pcm_data, int pcm_length, std::string &k
 		memcpy(&t, pcm_data + i, 2); // int16_t was 2bytes, PCM char string was 1byte
 		audio_data.push_back(t);
 	}
-
+#ifdef MDEBUG
 	std::cout << "Parsed PCM data completed total size: " << audio_data.size() << std::endl;
+#endif
 
 	// Prediction
 	ret = IsAwakenedWithAudio(audio_data, keyword, label_id, score, threshold);
@@ -298,7 +304,9 @@ bool KWS::IsAwakenedWithFeature(std::vector<float>& features,std::string &keywor
     // Step4, check weather wake or not
     bool ret = false;
     if (IsKeyword(keyword) && (score >= threshold)) {
+#ifdef MDEBUG
         std::cout << "Bot was wakeup, keyword: " << keyword << " score: " << score << std::endl;
+#endif
         ret = true;
     }
 
@@ -320,9 +328,11 @@ bool KWS::IsAwakenedWithFile(std::string& wav_file, std::string &keyword, int& l
 
 	// predict
 	//int label_id;
-	is_wake = IsAwakenedWithFeature(feature, keyword, label_id, score, 0.85);
+	is_wake = IsAwakenedWithFeature(feature, keyword, label_id, score, threshold_);
+#ifdef MDEBUG
 	std::cout << "Final result Process file: " << wav_file << " is_wake: " << is_wake <<
 		" keyword: " << keyword << " score: " << score << std::endl;
+#endif
 
 	return is_wake;
 }
@@ -341,9 +351,11 @@ size_t KWS::ProcessWavFile(std::string& wav_file, std::string &keyword, float &s
 
     // predict
 	int label_id;
-    is_wake = IsAwakenedWithFeature(feature, keyword, label_id, score, 0.85);
+    is_wake = IsAwakenedWithFeature(feature, keyword, label_id, score, threshold_);
+#ifdef MDEBUG
     std::cout <<"[DEBUG]Final result Process file: " << wav_file << " is_wake: " << is_wake <<
         " keyword: " << keyword << " score: " << score << std::endl;
+#endif
 
     return 0;
 }
@@ -366,7 +378,7 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
 	// *NOTE*, wav file name format like 5338ca0367ec5ef0d43244cdae31dda7.wav_2
 	if (!(pDir = opendir(wav_dir.c_str()))) {
 		perror(("Folder " + wav_dir + "doesn't exist!").c_str());
-		return 1;
+		return E_wav_open_folder;
 	}
 	while ((ptr = readdir(pDir)) != 0) {
 		if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {

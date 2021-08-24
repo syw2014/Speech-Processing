@@ -68,7 +68,9 @@ int main()
 	//std::cout << "Load PCM data completed!\n";
 	// Copy pointer data to vector
 	std::vector<int16_t> data{buffer, buffer+bufferLength};
-	kws.IsAwakenedWithAudio(data, keyword, label_id, score);
+	bool wakeup = false;
+	wakeup = kws.IsAwakenedWithAudio(data, keyword, label_id, score);
+	std::cout << "Bot wakeup was:  " << wakeup << " keyword: " << keyword << " label_id: " << label_id << " score: " << score ;
 	delete[] buffer;
 	buffer = nullptr;
 
@@ -86,10 +88,12 @@ int main()
 	ostr << inFile.rdbuf();
 	std::string pcm_char_str(ostr.str());
 	int buf_size = pcm_char_str.size();
+#ifdef MDEBUG
 	std::cout << "size: " << buf_size << std::endl;
+#endif
 	inFile.close();
-	kws.IsAwakenedWithPCM(pcm_char_str.c_str(), buf_size, keyword, label_id, score);
-	
+	wakeup = kws.IsAwakenedWithPCM(pcm_char_str.c_str(), buf_size, keyword, label_id, score);
+	std::cout << "Bot wakeup was:  " << wakeup << " keyword: " << keyword << " label_id: " << label_id << " score: " << score;
 	while (1) { 
 		//kws.IsAwakenedWithFile(wav_file, keyword, score, is_wake); 
 	}
