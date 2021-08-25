@@ -392,7 +392,7 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
 	closedir(pDir);
 	pDir = nullptr;
 
-	std::cout << "[DEBUG]Start to prediction with wav list toal file: " << files.size() << std::endl;
+	//std::cout << "[DEBUG]Start to prediction with wav list toal file: " << files.size() << std::endl;
     // predict
     //std::vector<float> feature;
     // store final result, order was: is_wake, keyword, score
@@ -417,12 +417,17 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
         //feature.clear();
 		keyword = "";
 		score = 0.0;
-		
+		TStart = Clock::now();
         // predict
         is_wake = IsAwakenedWithFile(files[i], keyword, label_id,score, threshold);
-
+		TEnd = Clock::now();
+		Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
+		std::cout << "Wav File prediction completed cost time: "
+			<< ms.count() << "ms" << std::endl;
 		// write to file
 		outfs << filenames[i] << "\t" << ToString(is_wake) << "\t" << keyword << "\t" << label_id
+			<< "\t" << ToString(score) << std::endl;
+		std::cout << filenames[i] << "\t" << ToString(is_wake) << "\t" << keyword << "\t" << label_id
 			<< "\t" << ToString(score) << std::endl;
         // Assembly results
         prediction[0] = filenames[i]; // file name
@@ -430,14 +435,12 @@ size_t KWS::ProcessWavFileList(std::string& wav_dir, std::vector<std::vector<std
         prediction[2] = keyword;  // keyword
         prediction[3] = ToString(score);  // score
 		prediction[4] = ToString(label_id); // keyword id
+		
         results[i] = prediction;
 		prediction.clear();
 		prediction.resize(5);
     }
-	TEnd = Clock::now();
-	Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
-	std::cout << "Wav File list prediction completed cost time: "
-		<< ms.count() << "ms" << std::endl;
+
 
 	outfs.close();
     return 0;
