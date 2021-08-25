@@ -71,8 +71,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-win-demo\includes;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\x64\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\tflite-libs\x86libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -91,18 +91,17 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\kws-win-demo\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\tflite-libs\x86libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>tensorflowlite_c.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
