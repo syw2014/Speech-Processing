@@ -45,7 +45,7 @@ std::string GetWavLabelID(const std::string& filename) {
 	SplitWord(filename, vec, ".");
 	if (vec.size() == 2) {
 		std::vector<std::string> arr;
-		SplitWord(vec[0], arr, "_");
+		SplitWord(vec[1], arr, "_");
 		if (arr.size() == 2) {
 			return arr[1];
 		}
@@ -55,13 +55,18 @@ std::string GetWavLabelID(const std::string& filename) {
 
 
 // Calculate the final result
-void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
+void ConfusionMatrix(std::vector<int> &predictions, std::vector<int> &targets, std::vector<double> &num_wakeup, float &threshold) {
 
 	// calculate class number
 	int num_labels = *max_element(targets.begin(), targets.end()) - *min_element(targets.begin(), targets.end()) + 1;
 	// define 4x4 matrix
 	std::vector<std::vector<int>> matrix(num_labels, std::vector<int>(num_labels, 0));
 	int num_samples = targets.size();
+
+	if ((predictions.size() != num_samples) || (predictions.size() == num_samples)) {
+		std::cout << "Prediction error size not the same prediction size: " << predictions.size() <<
+			"targets size: " << num_samples << " num_wakeup size: " << num_wakeup.size() << std::endl;
+	}
 
 	// initialize all the value as 0
 	//for (int i = 0; i < num_labels; ++i) {
@@ -106,21 +111,35 @@ void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
 			// check prediction same as label
 			// Note here `i` the real label
 
-			if (predictons[j] == i) {
+			if (predictions[j] == i) {
 				matrix[i][i] += 1; // prediction == target
 			}
 			else {
-				matrix[i][predictons[v[j]]] += 1; // prediction != target
+				matrix[i][predictions[v[j]]] += 1; // prediction != target
 			}
 		}
 	}
 
+	// store confusion matrix to file
+	// write final result to file
+	std::ofstream outfs("./report.txt");
+	if (!outfs.is_open()) {
+		std::cout << "Open outfile report.txt error!\n";
+		//return 1;
+	}
+	outfs << std::fixed << std::setprecision(8);
+
 	// print matrix
 	std::cout << "----------------------------------------------------\n";
+	outfs << "----------------------------------------------------\n";
 	std::cout << "Confuse Matrix:\n";
+	outfs << "Confuse Matrix:\n";
 	std::cout << "Label 0: silence 1: unknown 2: nihaoxiaoshun 3: xiaoshunxiaoshun\n";
+	outfs << "Label 0: silence 1: unknown 2: nihaoxiaoshun 3: xiaoshunxiaoshun\n";
 	std::cout << "Label|\t\t0\t1\t2\t3\n";
+	outfs << "Label|\t\t0\t1\t2\t3\n";
 	std::cout << "----------------------------------------------------\n";
+	outfs << "----------------------------------------------------\n";
 	int acc_cnt = 0, precision_cnt = 0, w_cnt = 0;
 	// Here we treat word1 and word2 as positive sample, silence and unknown as negative sample
 	// So here we only calculate TP, FP, TN, FN, then we calculate accuracy, precision, recall, F1 score
@@ -128,11 +147,14 @@ void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
 	double accuracy, precision;
 	for (int i = 0; i < num_labels; ++i) {
 		std::cout << "       " << i<<"|\t";
+		outfs << "       " << i << "|\t";
 		for (int j = 0; j < num_labels; ++j) {
 			std::cout << matrix[i][j] << "\t";
+			outfs << matrix[i][j] << "\t";
 			
 		}
 		std::cout << "\n";
+		outfs << "\n";
 		// tn
 		if ((i == 0) || (i == 1)) {
 			tn += matrix[i][i];
@@ -144,16 +166,46 @@ void ConfusionMatrix(std::vector<int> &predictons, std::vector<int> &targets) {
 	}
 
 	std::cout << "----------------------------------------------------\n";
+	outfs << "----------------------------------------------------\n";
 	// Calculate accuracy, precision, AUC, wakeup rate
 	accuracy = (double)(tp+tn) / targets.size();
 	precision = (double)tp / pos_samples_num;
 	std::cout << "Accuracy for 4-labels: " << (tp+tn) << "/" << targets.size() << "=" << accuracy << std::endl;
 	std::cout << "Precision for word1 and word2: " << (tp) << "/" << pos_samples_num << "=" << precision << std::endl;
-	
+	outfs << "Accuracy for 4-labels: " << (tp + tn) << "/" << targets.size() << "=" << accuracy << std::endl;
+	outfs << "Precision for word1 and word2: " << (tp) << "/" << pos_samples_num << "=" << precision << std::endl;
+
+	// calculate wakeup rate
+	int wake_cnt = 0, real_wake_cnt = 0, wrong_wake_cnt = 0;
+	for (int i = 0; i < num_wakeup.size(); ++i) {
+		if (num_wakeup[i] > threshold) { // score big than threshold regard as wakeup
+			if (predictions[i] == targets[i]) {
+				// true keyword
+				if ((targets[i] == 2) || (targets[i] == 3)) {
+					real_wake_cnt += 1;
+				}
+				else {
+					wrong_wake_cnt += 1; // wrong wake
+				}
+			}
+			else {
+				// wrong wake
+				wrong_wake_cnt += 1;
+			}
+		}
+	}
+	std::cout << "----------------------------------------------------\n";
+	std::cout << "True wakeup rate at threshold=" << threshold << "\t rate: " << (double)real_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	std::cout << "Error wakeup rate at threshold= " << threshold << " is: " << (double)wrong_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	outfs << "----------------------------------------------------\n";
+	outfs << "True wakeup rate at threshold=" << threshold << "\t rate: " << (double)real_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	outfs << "Error wakeup rate at threshold= " << threshold << " is: " << (double)wrong_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	outfs.close();
 }
 
 
-int _main()
+/*You should define MDEBUG to open debug information*/
+int main()
 {
 
 	// Step1 define all parameters
@@ -191,15 +243,19 @@ int _main()
 
 	//------------------------TEST4 prediction from wav file list----------------------------//
 	std::cout << "//------------------------TEST prediction from wav file list----------------------------//\n";
-	std::string wav_dir = "E:/github/ASR/tensorflow-lite-audio/tensorflow-lite/audios_data";
+	//std::string wav_dir = "E:/github/ASR/tensorflow-lite-audio/tensorflow-lite/audios_data";
+	std::string wav_dir = "E:/audios3/audios3";
 	std::string outfile = "./wav_list_result.txt";
 	std::cout << "Start to inference with input wav folder: " << wav_dir << std::endl;
 	// In the predict result, order was : [filenames, is_wake(0/1), keyword, score, pred_keyword_id]
 	// id_to_word: 0:silence, 1:unknown, 2:nihaoxiaoshun, 3:xiaoshunxiaoshun
 	std::vector<std::vector<std::string>> results;
-
+	Clock::time_point TStart, TEnd;
+	TStart = Clock::now();
 	kws.ProcessWavFileList(wav_dir, results, outfile, threshold);
-
+	TEnd = Clock::now();
+	Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
+	std::cout << "Process all wav files cost time: " << ms.count() << "ms" << std::endl;
 	// Calculate accuracy and wakeup rate under threshold
 	int num_samples = results.size();
 	std::vector<int> pred_ids(num_samples);
@@ -224,30 +280,31 @@ int _main()
 	// test confusion matrix
 	//std::vector<int> pred_ids{ 0,0,2,2,0,2 };
 	//std::vector<int> truth_ids{2,0,2,2,0,1};
-
-	ConfusionMatrix(pred_ids, truth_ids);
-	int wake_cnt = 0, real_wake_cnt = 0, wrong_wake_cnt  = 0;
-	for (int i = 0; i < num_wakeup.size(); ++i) {
-		if (num_wakeup[i] > threshold) { // score big than threshold regard as wakeup
-			if (pred_ids[i] == truth_ids[i]) {
-				// true keyword
-				if ((truth_ids[i] == 2) || (truth_ids[i] == 3)) {
-					real_wake_cnt += 1;
-				}
-				else {
-					wrong_wake_cnt += 1; // wrong wake
-				}
-			}
-			else {
-				// wrong wake
-				wrong_wake_cnt += 1;
-			}
-		}
-	}
-	std::cout << "----------------------------------------------------\n";
-	std::cout << "True wakeup rate at threshold=" << threshold << "\t rate: " << (double)real_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
-	std::cout << "Error wakeup rate at threshold= " << threshold << " is: " << (double)wrong_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
-	while(1){}
+	
+	std::cout << "Start to calculate confusion matrix...\n";
+	ConfusionMatrix(pred_ids, truth_ids, num_wakeup, threshold);
+	//int wake_cnt = 0, real_wake_cnt = 0, wrong_wake_cnt  = 0;
+	//for (int i = 0; i < num_wakeup.size(); ++i) {
+	//	if (num_wakeup[i] > threshold) { // score big than threshold regard as wakeup
+	//		if (pred_ids[i] == truth_ids[i]) {
+	//			// true keyword
+	//			if ((truth_ids[i] == 2) || (truth_ids[i] == 3)) {
+	//				real_wake_cnt += 1;
+	//			}
+	//			else {
+	//				wrong_wake_cnt += 1; // wrong wake
+	//			}
+	//		}
+	//		else {
+	//			// wrong wake
+	//			wrong_wake_cnt += 1;
+	//		}
+	//	}
+	//}
+	//std::cout << "----------------------------------------------------\n";
+	//std::cout << "True wakeup rate at threshold=" << threshold << "\t rate: " << (double)real_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	//std::cout << "Error wakeup rate at threshold= " << threshold << " is: " << (double)wrong_wake_cnt / (real_wake_cnt + wrong_wake_cnt) << std::endl;
+	//while(1){}
 
 	return 0;
 }
