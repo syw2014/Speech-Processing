@@ -12,7 +12,7 @@
 // link tflite static lib
 //#pragma comment(lib, "E:/github/ASR/Speech-Processing/deploy/KeywordSpotting/x64/Release/kws-lib.lib" )
 
-int main()
+int _main()
 {
 	// Step1 define all parameters
 	//std::string model_path = "E:/github/ASR/Speech-Processing/deploy/data/kwsh5.tflite";
@@ -42,7 +42,7 @@ int main()
 
 	// Step1 define all parameters
 	// **TODO**, change the path of model, it in ./data/kwsh5.tflite
-	std::string model_path = "E:/github/ASR/Speech-Processing/deploy/data/kwsh5.tflite";
+	std::string model_path = "D:/github/ASR/Speech-Processing/deploy/data/kwsh5.tflite";
 	Params params_;
 	// Parameter settings
 	// 1) sample_rate
@@ -74,7 +74,7 @@ int main()
 	std::cout << "//-------------------------TEST2 Prediction with PCM File-------------------------------//\n";
 	// Test read data from PCM FILE just read int16_t data from pcm file
 	// **TODO**, change the path of model, it in ./data/xiaoshunxiaoshun.PCM
-	std::string pcm_file = "E:/github/ASR/Speech-Processing/deploy/data/xiaoshunxiaoshun.PCM";
+	std::string pcm_file = "D:/github/ASR/Speech-Processing/deploy/data/xiaoshunxiaoshun.PCM";
 	std::cout << "Load PCM data from " << pcm_file << std::endl;
 	std::ifstream inFile(pcm_file, std::ifstream::in | std::ifstream::binary);
 
@@ -92,8 +92,9 @@ int main()
 	int buf_size = pcm_char_str.size();
 	std::cout << "size: " << buf_size << std::endl;
 	inFile.close();
-	kws.IsAwakenedWithPCM(pcm_char_str.c_str(), buf_size, keyword, label_id, score);
-
+	bool wakeup = kws.IsAwakenedWithPCM(pcm_char_str.c_str(), buf_size, keyword, label_id, score);
+	std::cout << "Bot wakeup was:  " << wakeup << " keyword: " << keyword 
+		<< " label_id: " << label_id << " score: " << score;
 
 	while (1) { 
 		//kws.IsAwakenedWithFile(wav_file, keyword, score, is_wake); 
