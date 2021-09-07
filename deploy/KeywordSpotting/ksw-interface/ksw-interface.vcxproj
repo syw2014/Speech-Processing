@@ -87,8 +87,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\x86libs;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\x86libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -135,7 +135,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\github\ASR\Speech-Processing\deploy\KeywordSpotting\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -145,7 +145,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>kws-lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>E:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\x86libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\github\ASR\Speech-Processing\deploy\KeywordSpotting\ksw-interface\x86libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
