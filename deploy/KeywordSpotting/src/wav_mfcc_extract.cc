@@ -11,6 +11,7 @@
 #include "error_code.h"
 //#include "wav_header.h"
 
+/*You should define MDEBUG to open debug information*/
 
 struct WAVHeader {
 	/* RIFF Chunk Descriptor */
@@ -440,21 +441,21 @@ size_t FeatureExtract::ProcessSingleWav(
     uint32_t decoded_sample_count;  // how many samples in wav file
     uint16_t decoded_channel_count; // how many channels in wav file
     uint32_t decoded_sample_rate;   // the real sample rate of wav file
-
+	TStart = Clock::now();
     size_t ret = ReadWav(filename, audio_samples, decoded_sample_count,
                          decoded_channel_count, decoded_sample_rate);
     if (ret != 0) {
         //std::cout << "Load audio data error!\n";
         return E_wav_open;
     }
-	TStart = Clock::now();
+	TEnd = Clock::now();
+	Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
+	std::cout << "Load wav file completed cost time: "
+	          << ms.count() << "ms" << std::endl;
     // Get Spectrogram and mfcc features
     ret = ExtractFeatures(audio_samples, mfcc_features);
 
-    TEnd = Clock::now();
-    Milliseconds ms = std::chrono::duration_cast<Milliseconds>(TEnd - TStart);
-    std::cout << "Completed audio mfcc feature extraction cost time: "
-              << ms.count() << "ms" << std::endl;
+
 
     // Save mfcc features to files
 	if (write_to_file) {
