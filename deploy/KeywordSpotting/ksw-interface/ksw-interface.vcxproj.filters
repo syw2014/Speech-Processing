@@ -18,9 +18,18 @@
     <ClCompile Include="src\interface_demo.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\kws_app.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoreAudioCap.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\kws.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\CoreAudioCap.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

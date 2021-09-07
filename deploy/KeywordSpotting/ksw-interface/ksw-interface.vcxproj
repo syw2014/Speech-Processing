@@ -19,9 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\CoreAudioCap.cpp" />
     <ClCompile Include="src\interface_demo.cc" />
+    <ClCompile Include="src\kws_app.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\includes\CoreAudioCap.h" />
     <ClInclude Include="includes\kws.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
