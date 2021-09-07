@@ -16,6 +16,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <time.h>
 
 // link tflite static lib
 //#pragma comment( lib, "E:/github/ASR/Speech-Processing/deploy/KeywordSpotting/kws-win-demo/libs/tensorflowlite_c.dll.if.lib" )
@@ -69,11 +70,11 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 		
 		//std::cout << "Get audio data: " << buf_size << std::endl;
 		// write final result to file
-		//std::ofstream outfs("./kws_test.txt", "aw+");
-		//if (!outfs.is_open()) {
-		//	std::cout << "Open outfile report.txt error!\n";
-		//	//return 1;
-		//}
+		std::ofstream outfs("./kws_test.txt", std::ios::app);
+		if (!outfs.is_open()) {
+			std::cout << "Open outfile report.txt error!\n";
+			//return 1;
+		}
 		//outfs << std::fixed << std::setprecision(8);
 		// Predict
 		std::string keyword = "";
@@ -83,21 +84,32 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 		int label_id = -1;
 		KWS* kws_ptr = (KWS*)kws;
 		buf_size = audio_pkg_str.size();
-		std::cout << "ss=>" << buf_size << std::endl;
+		//std::cout << "ss=>" << buf_size << std::endl;
+		// get date
+		struct tm stime;
+		time_t now = time(0);
+		localtime_s(&stime, &now);
+		char tmp[32] = { NULL };
+		strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H:%M:%S", &stime);
+		std::string date(tmp);
 		if (audio_pkg_str.size() != 0) {
 			wakeup = kws_ptr->IsAwakenedWithPCM(audio_pkg_str.c_str(), buf_size, keyword, label_id, score);
 			std::cout << "[INFO]Bot wakeup was: " << wakeup << "\tkeyword: " << keyword << "\tlabel_id: "
 				<< label_id << "\tscore: " << score;
+			outfs << date << " [INFO]Bot wakeup was: " << wakeup << "\tkeyword: " << keyword << "\tlabel_id: "
+				<< label_id << "\tscore: " << score << std::endl;
 		}
 		else {
-			std::cout << "[WARNING]Get invalid audio data from device!\n";
+			std::cout << date << " [WARNING]Get invalid audio data from device!\n";
+			outfs << date << " [WARNING]Get invalid audio data from device!\n";
 		}
 
 
 		g_DataList.clear();
 		//delete p;
 		kws_ptr = NULL;
-	}
+		outfs.close();
+	} // end wakeup block
 }
 
 // *NOTE* If you want to run this project please convert _main to main
