@@ -205,7 +205,7 @@ void ConfusionMatrix(std::vector<int> &predictions, std::vector<int> &targets, s
 
 
 /*You should define MDEBUG to open debug information*/
-int main()
+int _main()
 {
 
 	// Step1 define all parameters
