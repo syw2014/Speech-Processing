@@ -17,6 +17,9 @@
 #include <mutex>
 #include <vector>
 #include <time.h>
+#include <atlstr.h>
+#include <stdlib.h>
+
 
 // link tflite static lib
 //#pragma comment( lib, "E:/github/ASR/Speech-Processing/deploy/KeywordSpotting/kws-win-demo/libs/tensorflowlite_c.dll.if.lib" )
@@ -24,7 +27,32 @@ typedef void(CALLBACK *pCallBackAudioData_Out)(unsigned char* data, int length, 
 static mutex  g_Mutex_Capture;
 static AudioList  g_DataList;         //数据列表
 static int audio_pkg_cnt = 0;
-									  // Define callback
+
+// calculate audio DB
+int CalculatePcmDB(const char* pcm_data, std::size_t length) {
+	int db = 0;
+	short  value = 0;
+	double sum = 0;
+	short  maxvalue = 0;
+	for (int i = 0; i < length; i += 2)
+	{
+		memcpy(&value, pcm_data + i, 2); //获取2个字节的大小（值）
+		sum += abs(value); //绝对值求和
+
+		if (abs(value) > maxvalue)
+			maxvalue = abs(value);
+
+	}
+	sum = sum / (length / 2);    //求平均值（2个字节表示一个振幅，所以振幅个数为：size/2个）
+	if (sum > 0)
+	{
+		db = (int)(20.0*log10(sum)) + 10;
+	}
+
+	return db;
+}
+
+// Define callback
 void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolumeLevel, unsigned long dwtime, void* kws) {
 
 	// Get number data block
@@ -70,7 +98,9 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 		}
 
 
-		//std::cout << "Get audio data: " << buf_size << std::endl;
+		// Check voice volume
+		int db = CalculatePcmDB(audio_pkg_str.c_str(), audio_pkg_str.length());
+		
 		// write final result to file
 		std::ofstream outfs("./kws_test.txt", std::ios::app);
 		if (!outfs.is_open()) {
@@ -78,15 +108,7 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 			//return 1;
 		}
 		//outfs << std::fixed << std::setprecision(8);
-		// Predict
-		std::string keyword = "";
-		float score = 0.0;
-		bool wakeup = false;
-		// Define variables for modules
-		int label_id = -1;
-		KWS* kws_ptr = (KWS*)kws;
-		buf_size = audio_pkg_str.size();
-		//std::cout << "ss=>" << buf_size << std::endl;
+		DWORD ttime = GetTickCount();
 		// get date
 		struct tm stime;
 		time_t now = time(0);
@@ -94,17 +116,61 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 		char tmp[32] = { NULL };
 		strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H:%M:%S", &stime);
 		std::string date(tmp);
-		if (audio_pkg_str.size() != 0) {
-			wakeup = kws_ptr->IsAwakenedWithPCM(audio_pkg_str.c_str(), buf_size, keyword, label_id, score);
-			std::cout << "[INFO]Bot wakeup was: " << wakeup << "\tkeyword: " << keyword << "\tlabel_id: "
-				<< label_id << "\tscore: " << score << std::endl;
-			outfs << date << " [INFO]Bot wakeup was: " << wakeup << "\tkeyword: " << keyword << "\tlabel_id: "
-				<< label_id << "\tscore: " << score << std::endl;
+		if (abs(db) >= 40) { // volume was > 40db then predict with KWS model
+
+			//std::cout << "Get audio data: " << buf_size << std::endl;
+			// Predict
+			std::string keyword = "";
+			float score = 0.0;
+			bool wakeup = false;
+			// Define variables for modules
+			int label_id = -1;
+			KWS* kws_ptr = (KWS*)kws;
+			buf_size = audio_pkg_str.size();
+
+			if (audio_pkg_str.size() != 0) {
+				wakeup = kws_ptr->IsAwakenedWithPCM(audio_pkg_str.c_str(), buf_size, keyword, label_id, score);
+				std::cout << "[INFO]Bot wakeup was: " << wakeup << "\tkeyword: " << keyword << "\tlabel_id: "
+					<< label_id << "\tscore: " << score << "\tdb:" << db << std::endl;
+				outfs << ttime << "-"<<date << " [INFO]Bot wakeup was: " << wakeup << "\tkeyword: " << 
+					keyword << "\tlabel_id: "
+					<< label_id << "\tscore: " << score << "\tdb:" <<db << std::endl;
+			}
+			else {
+				std::cout << date << " [ERROR]Get invalid audio data from device!\n";
+				outfs << ttime << "-" << date 
+					<< " [ERROR]Get invalid audio data from device: 0\tkeyword: None" <<
+					"\tlabel_id: -1\tscore: 0\tdb: 0.0" << std::endl;
+			}
+
+			// write auido to pcm file
+			FILE * fDst = NULL;
+			unsigned char  *tempdata = (unsigned char *)audio_pkg_str.c_str();
+			int iLength = audio_pkg_str.length();
+
+			CString szfilename;
+			szfilename.Format(_T("./data/test_%d.pcm"), ttime);
+			_tfopen_s(&fDst, szfilename, _T("wb+"));
+
+			int nTotal = 0;
+
+			while (nTotal < iLength)
+			{
+				int nTmp = fwrite(tempdata + nTotal, 1, iLength - nTotal, fDst);
+				nTotal += nTmp;
+			}
+			fclose(fDst);
+			kws_ptr = NULL;
+		}			// end voice check
+		else { // print log
+			std::cout << "[WARNING]Voice volume was: " << db << ",Wake up not triggered" << std::endl;
+			outfs << ttime << "-" << date << " [WARNING]volume of voice was < 40\tkeyword: None" <<
+				"\tlabel_id: -1\tscore: 0\tdb: "<<db << std::endl;
 		}
-		else {
-			std::cout << date << " [WARNING]Get invalid audio data from device!\n";
-			outfs << date << " [WARNING]Get invalid audio data from device!\n";
-		}
+
+		
+
+		// clean data 
 		for (auto i = g_DataList.begin(); i != g_DataList.end(); i++)
 		{
 			delete[](*i)->pData;
@@ -115,7 +181,6 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 
 		g_DataList.clear();
 		//delete p;
-		kws_ptr = NULL;
 		outfs.close();
 		audio_pkg_cnt = 0; // reset
 	} // end wakeup block
