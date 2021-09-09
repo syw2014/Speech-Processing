@@ -118,7 +118,7 @@ int main()
 {
 
 	// Step1 define all parameters
-	std::string model_path = "D:/github/ASR/Speech-Processing/deploy/data/kwsh5.tflite";
+	std::string model_path = "D:/develop/Speech-Processing/deploy/data/kwsh5.tflite";
 	Params params_;
 	// Parameter settings
 	// 1) sample_rate
@@ -145,14 +145,14 @@ int main()
 	
 	//------------------------TEST1 Prediction with WAV file--------------------------------//
 	std::cout << "//------------------------TEST1 Prediction with WAV file--------------------------------//\n";
-	std::string wav_file = "D:/github/ASR/Speech-Processing/deploy/data/47850987c8a227b92673f9a88fb7efb8.wav";
+	std::string wav_file = "D:/develop/Speech-Processing/deploy/data/47850987c8a227b92673f9a88fb7efb8.wav";
 	kws.ProcessWavFile(wav_file, keyword, score, is_wake);
 
 
 	//-------------------------TEST2 Prediction with PCM File-------------------------------//
 	std::cout << "//-------------------------TEST2 Prediction with PCM File-------------------------------//\n";
 	// Test read data from PCM FILE just read int16_t data from pcm file
-	std::string pcm_file = "D:/github/ASR/Speech-Processing/deploy/data/xiaoshunxiaoshun.PCM";
+	std::string pcm_file = "D:/develop/Speech-Processing/deploy/data/xiaoshunxiaoshun.PCM";
 	std::cout << "Load PCM data from " << pcm_file << std::endl;
 	std::ifstream inFile(pcm_file, std::ifstream::in | std::ifstream::binary);
 	uint16_t bufferLength = 16000;
