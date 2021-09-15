@@ -32,5 +32,8 @@
     <ClInclude Include="..\includes\CoreAudioCap.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\clipp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

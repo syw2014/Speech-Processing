@@ -26,6 +26,7 @@
   <ItemGroup>
     <ClInclude Include="..\includes\CoreAudioCap.h" />
     <ClInclude Include="includes\kws.h" />
+    <ClInclude Include="src\clipp.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5338EB39-2A67-4D59-9836-ADF4AAD81358}</ProjectGuid>
