@@ -1,5 +1,5 @@
 /*
-* @Author: your name
+* @Author: jerryshi
 * @Date: 2021-08-09 14:13:00
 * @LastEditTime: 2021-08-09 14:13:38
 * @LastEditors: Please set LastEditors
@@ -19,6 +19,7 @@
 #include <time.h>
 #include <atlstr.h>
 #include <stdlib.h>
+//#include "clipp.h"
 
 
 // link tflite static lib
@@ -116,7 +117,7 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 		char tmp[32] = { NULL };
 		strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H:%M:%S", &stime);
 		std::string date(tmp);
-		if (abs(db) >= 40) { // volume was > 40db then predict with KWS model
+		if (abs(db) >= 50) { // volume was > 40db then predict with KWS model
 
 			//std::cout << "Get audio data: " << buf_size << std::endl;
 			// Predict
@@ -188,7 +189,7 @@ void CALLBACK AudioCallBackProcess(unsigned char* data, int length, float fVolum
 
 // *NOTE* If you want to run this project please convert _main to main
 // *You should define MDEBUG to open debug information*
-int main()
+int main(int argc, char* argv[])
 {
 
 	// Step1 define all parameters
@@ -207,6 +208,12 @@ int main()
 
 
 	float threshold = 0.88;
+
+	// Parse cmd parameters
+	//auto cli = (
+	//	clipp::option("-m").set(model_path),
+	//	clipp::option("-t").set(threshold));
+	//std::cout << "[INFO]Load model: " << model_path << "\tthreshold: " << threshold << std::endl;
 	// Step2 create KWS module instance
 	KWS kws;
 	kws.ModelInitialize(model_path, params_, threshold);
